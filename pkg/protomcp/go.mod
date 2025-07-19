@@ -1,3 +1,5 @@
-module github.com/amery/protomcp/pkg/protomcp
+module github.com/protomcp/protomcp/pkg/protomcp
 
 go 1.23.0
+
+replace github.com/protomcp/protomcp/pkg/base => ../base
