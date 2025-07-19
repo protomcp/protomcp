@@ -1,0 +1,12 @@
+{{define "service.tmpl"}}
+// {{.InterfaceName}} is the interface for {{.Name}}
+{{- if .Comment}}
+// {{.Comment}}
+{{- end}}
+type {{.InterfaceName}} interface {
+{{- range .Methods}}
+	{{template "rpc.tmpl" .}}
+{{- end}}
+}
+{{end}}
+

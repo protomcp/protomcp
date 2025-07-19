@@ -1,0 +1,15 @@
+{{define "field.tmpl"}}
+{{- if not .IsOneOf}}
+	// Get{{.GoName}} returns the {{.Name}} field
+	Get{{.GoName}}() {{.Type}}
+	// Set{{.GoName}} sets the {{.Name}} field
+	Set{{.GoName}}(v {{.Type}}) error
+{{- if .Optional}}
+	// Has{{.GoName}} returns true if the {{.Name}} field is set
+	Has{{.GoName}}() bool
+	// Clear{{.GoName}} clears the {{.Name}} field
+	Clear{{.GoName}}()
+{{- end}}
+{{- end}}
+{{end}}
+

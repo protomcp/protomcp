@@ -1,0 +1,7 @@
+{{define "rpc.tmpl"}}
+{{- if .Comment}}
+	// {{.Comment}}
+{{- end}}
+	{{.Name}}(ctx context.Context, req {{.RequestType}}) ({{.ResponseType}}, error)
+{{end}}
+
