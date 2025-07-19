@@ -9,6 +9,7 @@
     "codecov",
     "coverpkg",
     "coverprofile",
+    "darvaza",
     "golangci",
     "GOTEST",
     "jsonrpc",
