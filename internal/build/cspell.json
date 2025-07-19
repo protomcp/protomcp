@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en-GB",
+  "words": [
+    "amery",
+    "behaviour",
+    "Carryforward",
+    "codecov",
+    "coverpkg",
+    "coverprofile",
+    "golangci",
+    "GOTEST",
+    "jsonrpc",
+    "languagetool",
+    "nanorpc",
+    "protobuf",
+    "protoc",
+    "protomcp",
+    "QUIC",
+    "shellcheck",
+    "sourcegraph"
+  ],
+  "ignorePaths": [
+    "*.lock",
+    ".coverage",
+    ".git",
+    ".tmp",
+    "go.sum",
+    "node_modules",
+    "vendor"
+  ]
+}
