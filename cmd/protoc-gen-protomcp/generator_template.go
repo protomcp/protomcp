@@ -41,13 +41,13 @@ func (g *Generator) generateTypesWithTemplate(file *protogen.File, opts *Generat
 }
 
 // prepareTemplateData creates the base template data structure
-func (*Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
+func (g *Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
 	// Collect imports as paths
 	var stdPaths []string
 	var thirdPartyPaths []string
 
-	// Add context import if we have services (standard library)
-	if len(file.Services) > 0 && opts.GenerateServices {
+	// Add context import if we need services (standard library)
+	if g.NeedsServices(file, opts) {
 		stdPaths = append(stdPaths, "context")
 	}
 
@@ -162,7 +162,7 @@ func (*Generator) buildServiceData(_ *protogen.GeneratedFile, svc *protogen.Serv
 	opts *GeneratorOptions) ServiceData {
 	data := ServiceData{
 		Name:          svc.GoName,
-		InterfaceName: svc.GoName + "Service",
+		InterfaceName: gengo.InterfaceNameForService(svc, opts.InterfacePattern),
 		Comment:       strings.TrimSpace(string(svc.Comments.Leading)),
 		Methods:       make([]MethodData, 0, len(svc.Methods)),
 	}

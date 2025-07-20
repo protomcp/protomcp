@@ -18,27 +18,41 @@ func IsSyntheticOneOf(oneof *protogen.Oneof) bool {
 
 // GoTypeForFieldWithPattern returns the Go type string for a proto field with interface pattern support
 func GoTypeForFieldWithPattern(gen *protogen.GeneratedFile, field *protogen.Field, pattern string) string {
+	cache := make(map[string]string)
+	return goTypeForFieldWithPatternCached(gen, field, pattern, cache)
+}
+
+func goTypeForFieldWithPatternCached(
+	gen *protogen.GeneratedFile, field *protogen.Field, pattern string, cache map[string]string,
+) string {
+	// Create cache key based on field's full name and pattern
+	cacheKey := string(field.Desc.FullName()) + ":" + pattern
+	if cached, ok := cache[cacheKey]; ok {
+		return cached
+	}
+
+	// Mark as processing to detect cycles
+	cache[cacheKey] = "any" // Fallback for circular references
+
 	// Build the base type
 	baseType := getBaseTypeWithPattern(gen, field, pattern)
 
-	// Handle repeated fields
+	// Handle special field types
+	var result string
 	if field.Desc.IsList() {
-		return "[]" + baseType
+		result = "[]" + baseType
+	} else if field.Desc.IsMap() {
+		keyType := goTypeForFieldWithPatternCached(gen, field.Message.Fields[0], pattern, cache)
+		valueType := goTypeForFieldWithPatternCached(gen, field.Message.Fields[1], pattern, cache)
+		result = "map[" + keyType + "]" + valueType
+	} else {
+		// Default case: return base type (handles optional fields and regular fields)
+		result = baseType
 	}
 
-	// Handle map fields
-	if field.Desc.IsMap() {
-		keyType := GoTypeForFieldWithPattern(gen, field.Message.Fields[0], pattern)
-		valueType := GoTypeForFieldWithPattern(gen, field.Message.Fields[1], pattern)
-		return "map[" + keyType + "]" + valueType
-	}
-
-	// Handle optional fields (proto3 optional or proto2 optional)
-	if field.Desc.HasOptionalKeyword() && field.Desc.Kind() == protoreflect.MessageKind {
-		return baseType // Already has pointer
-	}
-
-	return baseType
+	// Cache the final result
+	cache[cacheKey] = result
+	return result
 }
 
 // getBaseTypeWithPattern returns the base Go type for a field without modifiers, applying interface pattern
@@ -95,10 +109,27 @@ func scalarGoType(kind protoreflect.Kind) string {
 
 // InterfaceNameForMessage returns the interface name for a message
 func InterfaceNameForMessage(msg *protogen.Message, pattern string) string {
+	return applyInterfacePattern(msg.GoIdent.GoName, pattern)
+}
+
+// InterfaceNameForService returns the interface name for a service based on the pattern
+func InterfaceNameForService(svc *protogen.Service, pattern string) string {
+	name := svc.GoName
+
+	// For services, ensure we have "Service" suffix unless already present
+	if !strings.HasSuffix(name, "Service") {
+		name = name + "Service"
+	}
+
+	return applyInterfacePattern(name, pattern)
+}
+
+// applyInterfacePattern applies the naming pattern to generate interface names
+func applyInterfacePattern(name, pattern string) string {
 	if pattern == "" {
 		pattern = "I%" // Default pattern
 	}
-	return strings.ReplaceAll(pattern, "%", msg.GoIdent.GoName)
+	return strings.ReplaceAll(pattern, "%", name)
 }
 
 // Import represents an import statement

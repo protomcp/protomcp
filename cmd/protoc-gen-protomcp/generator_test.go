@@ -196,9 +196,12 @@ func TestGenerateServiceInterface(t *testing.T) {
 
 	// Check expected content
 	expectedStrings := []string{
-		"type CalculatorService interface {",                              // Service interface declaration
-		"Add(ctx context.Context, req IAddRequest) (IAddResponse, error)", // Add method signature
-		`"context"`, // Context import
+		// Service interface declaration with I% pattern
+		"type ICalculatorService interface {",
+		// Add method signature
+		"Add(ctx context.Context, req IAddRequest) (IAddResponse, error)",
+		// Context import
+		`"context"`,
 	}
 
 	for _, expected := range expectedStrings {
