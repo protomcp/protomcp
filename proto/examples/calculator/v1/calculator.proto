@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package calculator.v1;
+
+option go_package = "github.com/protomcp/protomcp/examples/calculator/v1";
+
+// Calculator service provides basic arithmetic operations
+service CalculatorService {
+  // Add two numbers
+  rpc Add(AddRequest) returns (AddResponse);
+
+  // Multiply two numbers
+  rpc Multiply(MultiplyRequest) returns (MultiplyResponse);
+
+  // Divide two numbers
+  rpc Divide(DivideRequest) returns (DivideResponse);
+}
+
+// AddRequest is the request message for Add method
+message AddRequest {
+  double a = 1;
+  double b = 2;
+}
+
+// AddResponse is the response message for Add method
+message AddResponse {
+  double result = 1;
+}
+
+// MultiplyRequest is the request message for Multiply method
+message MultiplyRequest {
+  double a = 1;
+  double b = 2;
+}
+
+// MultiplyResponse is the response message for Multiply method
+message MultiplyResponse {
+  double result = 1;
+}
+
+// DivideRequest is the request message for Divide method
+message DivideRequest {
+  double a = 1;
+  double b = 2;
+}
+
+// DivideResponse is the response message for Divide method
+message DivideResponse {
+  double quotient = 1;
+  double remainder = 2;
+
+  // Error message if division by zero
+  optional string error = 3;
+}
+
+// Complex example with various field types
+message ComplexMessage {
+  // Scalar types
+  string id = 1;
+  int32 count = 2;
+  bool active = 3;
+
+  // Optional field
+  optional string description = 4;
+
+  // Repeated field
+  repeated string tags = 5;
+
+  // Map field
+  map<string, string> metadata = 6;
+
+  // Nested message
+  UserInfo user = 7;
+
+  // Oneof field
+  oneof identifier {
+    string email = 8;
+    string username = 9;
+    int64 user_id = 10;
+  }
+
+  // Enum field
+  Status status = 11;
+}
+
+// Nested message type
+message UserInfo {
+  string name = 1;
+  int32 age = 2;
+}
+
+// Enum type
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+  STATUS_SUSPENDED = 3;
+}

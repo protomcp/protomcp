@@ -1,0 +1,13 @@
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/go
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: protomcp
+    out: .
+    opt:
+      - paths=source_relative
+      - interfaces=true
+      - services=true
+      - interface_pattern=I%
