@@ -74,16 +74,15 @@ func (g *Generator) generateNoImplWithTemplate(file *protogen.File, opts *Genera
 }
 
 // prepareTemplateData creates the base template data structure
-func (g *Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
+func (*Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
 	// Collect imports as paths
 	var stdPaths []string
 	var thirdPartyPaths []string
 
 	// Add context import if we need services (standard library)
-	if g.NeedsServices(file, opts) {
+	if opts.NeedsServices(file) {
 		stdPaths = append(stdPaths, "context")
 	}
-
 	// Use GenerateImports to process and organize imports
 	importGroups := gengo.GenerateImports(stdPaths, thirdPartyPaths)
 
@@ -98,20 +97,20 @@ func (g *Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOpti
 }
 
 // prepareNoImplTemplateData creates template data for NoImpl file
-func (g *Generator) prepareNoImplTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
+func (*Generator) prepareNoImplTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
 	// Collect imports as paths
 	var stdPaths []string
 	var thirdPartyPaths []string
 
 	// Add context import if we have services (standard library)
-	if g.HasServices(file) && opts.GenerateServices {
+	if opts.HasServices(file) && opts.GetGenerateServices() {
 		stdPaths = append(stdPaths, "context")
 	}
 
 	// Add required imports for NoImpl only if we have content
-	if g.NeedsNoImpl(file, opts) {
+	if opts.NeedsNoImpl(file) {
 		thirdPartyPaths = append(thirdPartyPaths, "darvaza.org/core")
-		if g.HasMessages(file) && opts.GenerateInterfaces {
+		if opts.HasMessages(file) && opts.GetGenerateInterfaces() {
 			thirdPartyPaths = append(thirdPartyPaths, "google.golang.org/protobuf/reflect/protoreflect")
 		}
 	}

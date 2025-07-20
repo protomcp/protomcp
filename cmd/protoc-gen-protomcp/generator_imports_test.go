@@ -32,11 +32,11 @@ func (tc hasContentTestCase) test(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
+	opts := &GeneratorOptions{}
 
 	for _, file := range plugin.Files {
-		testutils.AssertEqual(t, gen.HasMessages(file), tc.hasMessages, "HasMessages()")
-		testutils.AssertEqual(t, gen.HasServices(file), tc.hasServices, "HasServices()")
+		testutils.AssertEqual(t, opts.HasMessages(file), tc.hasMessages, "HasMessages()")
+		testutils.AssertEqual(t, opts.HasServices(file), tc.hasServices, "HasServices()")
 	}
 }
 
@@ -57,10 +57,9 @@ func (tc needsTypesTestCase) test(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 
 	for _, file := range plugin.Files {
-		testutils.AssertEqual(t, gen.NeedsTypes(file, tc.opts), tc.needsTypes, "NeedsTypes()")
+		testutils.AssertEqual(t, tc.opts.NeedsTypes(file), tc.needsTypes, "NeedsTypes()")
 	}
 }
 

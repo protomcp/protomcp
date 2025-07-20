@@ -9,11 +9,11 @@ import (
 
 func main() {
 	var flags flag.FlagSet
-	interfaces := flags.Bool("interfaces", true, "generate interface files")
-	services := flags.Bool("services", true, "generate service interfaces")
-	pattern := flags.String("interface_pattern", "I%",
+	interfaces := flags.Bool("interfaces", DefaultGenerateInterfaces, "generate interface files")
+	services := flags.Bool("services", DefaultGenerateServices, "generate service interfaces")
+	pattern := flags.String("interface_pattern", DefaultInterfacePattern,
 		"pattern for interface names (e.g., 'I%' for prefix, '%Interface' for suffix)")
-	noImpl := flags.Bool("noimpl", true, "generate NoImpl structs for interfaces")
+	noImpl := flags.Bool("noimpl", DefaultGenerateNoImpl, "generate NoImpl structs for interfaces")
 
 	protogen.Options{
 		ParamFunc: flags.Set,
