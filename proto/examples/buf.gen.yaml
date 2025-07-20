@@ -11,3 +11,4 @@ plugins:
       - interfaces=true
       - services=true
       - interface_pattern=I%
+      - noimpl=true

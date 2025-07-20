@@ -1,0 +1,17 @@
+{{define "noimpl_service.tmpl"}}
+// {{.NoImplName}} provides a no-op implementation of {{.InterfaceName}}.
+// Embed this struct in your implementation to forward unimplemented methods.
+type {{.NoImplName}} struct{}
+
+// Ensure {{.NoImplName}} implements {{.InterfaceName}}
+var _ {{.InterfaceName}} = (*{{.NoImplName}})(nil)
+
+{{- range .Methods}}
+
+// {{.Name}} implements {{$.InterfaceName}}.{{.Name}}
+func (*{{$.NoImplName}}) {{.Name}}(ctx context.Context, req {{.RequestType}}) ({{.ResponseType}}, error) {
+	return nil, core.Wrap(core.ErrNotImplemented, "{{$.InterfaceName}}.{{.Name}}")
+}
+{{- end}}
+
+{{end}}

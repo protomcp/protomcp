@@ -14,11 +14,14 @@ var templates = template.Must(template.New("").ParseFS(templateFS, "templates/*.
 
 // Template names
 const (
-	fileTemplate    = "file.tmpl"
-	messageTemplate = "message.tmpl"
-	fieldTemplate   = "field.tmpl"
-	serviceTemplate = "service.tmpl"
-	rpcTemplate     = "rpc.tmpl"
+	fileTemplate          = "file.tmpl"
+	messageTemplate       = "message.tmpl"
+	fieldTemplate         = "field.tmpl"
+	serviceTemplate       = "service.tmpl"
+	rpcTemplate           = "rpc.tmpl"
+	noImplFileTemplate    = "noImpl_file.tmpl"
+	noImplMessageTemplate = "noImpl_message.tmpl"
+	noImplServiceTemplate = "noImpl_service.tmpl"
 )
 
 // TemplateData holds the data for rendering templates
@@ -28,12 +31,14 @@ type TemplateData struct {
 	ImportGroups [][]gengo.Import // Groups of imports, separated by blank lines
 	Messages     []MessageData
 	Services     []ServiceData
+	NoImpl       bool // Whether to generate NoImpl structs
 }
 
 // MessageData holds data for a message interface
 type MessageData struct {
 	Name          string
 	InterfaceName string
+	NoImplName    string // Name for NoImpl struct
 	Comment       string
 	Fields        []FieldData
 	OneOfGroups   []OneOfData
@@ -48,6 +53,7 @@ type FieldData struct {
 	OneOfName string
 	Optional  bool
 	IsOneOf   bool
+	IsMessage bool // true if field is a message type (interface)
 }
 
 // OneOfData holds data for a `oneof` group
@@ -69,6 +75,7 @@ type OneOfFieldData struct {
 type ServiceData struct {
 	Name          string
 	InterfaceName string
+	NoImplName    string // Name for NoImpl struct
 	Comment       string
 	Methods       []MethodData
 }

@@ -13,6 +13,7 @@ func main() {
 	services := flags.Bool("services", true, "generate service interfaces")
 	pattern := flags.String("interface_pattern", "I%",
 		"pattern for interface names (e.g., 'I%' for prefix, '%Interface' for suffix)")
+	noImpl := flags.Bool("noimpl", true, "generate NoImpl structs for interfaces")
 
 	protogen.Options{
 		ParamFunc: flags.Set,
@@ -24,6 +25,7 @@ func main() {
 			GenerateInterfaces: *interfaces,
 			GenerateServices:   *services,
 			InterfacePattern:   *pattern,
+			GenerateNoImpl:     *noImpl,
 		})
 	})
 }
