@@ -45,6 +45,7 @@
     "Unmarshal"
   ],
   "ignorePaths": [
+    "**/*.pb.go",
     "*.lock",
     ".coverage",
     ".git",

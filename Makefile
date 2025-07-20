@@ -1,5 +1,5 @@
 .PHONY: all clean generate fmt tidy check-grammar check-spelling check-shell check-jq
-.PHONY: coverage codecov
+.PHONY: coverage codecov examples examples-lint
 .PHONY: FORCE
 
 GO ?= go
@@ -28,6 +28,11 @@ REVIVE_CONF ?= $(TOOLSDIR)/revive.toml
 REVIVE_RUN_ARGS ?= -config $(REVIVE_CONF) -formatter friendly
 REVIVE_URL ?= github.com/mgechev/revive@$(REVIVE_VERSION)
 REVIVE ?= $(GO) run $(REVIVE_URL)
+
+# buf build tool
+BUF_VERSION ?= latest
+BUF_URL ?= github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
+BUF ?= $(GO) run $(BUF_URL)
 
 PNPX ?= pnpx
 
@@ -100,7 +105,9 @@ GO_BUILD_CMD = $(GO_BUILD) -o "$(OUTDIR)"
 all: get generate tidy build
 
 clean: ; $(info $(M) cleaning…)
-	rm -rf $(TMPDIR)
+	$Q rm -rf $(TMPDIR)
+	$Q find proto/ -name '*.go' -print0 | xargs -0r rm
+
 
 $(TMPDIR)/index: $(TOOLSDIR)/gen_index.sh Makefile FORCE ; $(info $(M) generating index…)
 	$Q mkdir -p $(@D)
@@ -173,3 +180,11 @@ check-jq: FORCE
 		echo "  Install jq or set JQ variable to override" >&2; \
 		false; \
 	}
+
+# Generate examples using buf
+examples: build ; $(info $(M) generating examples…)
+	$Q cd proto/examples && PATH="$(OUTDIR):$$PATH" $(BUF) generate
+
+# Lint example proto files
+examples-lint: ; $(info $(M) linting example proto files…)
+	$Q cd proto/examples && $(BUF) lint
