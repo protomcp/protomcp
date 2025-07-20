@@ -17,9 +17,8 @@ import (
 {{end}}
 
 {{range .Messages}}
-{{template "message.tmpl" .}}
+{{template "noimpl_message.tmpl" .}}
 {{end}}
 {{range .Services}}
-{{template "service.tmpl" .}}
+{{template "noimpl_service.tmpl" .}}
 {{end}}
-

@@ -1,0 +1,67 @@
+{{define "noimpl_message.tmpl"}}
+// {{.NoImplName}} provides a no-op implementation of {{.InterfaceName}}.
+// Embed this struct in your implementation to forward unimplemented methods.
+type {{.NoImplName}} struct{}
+
+// Ensure {{.NoImplName}} implements {{.InterfaceName}}
+var _ {{.InterfaceName}} = (*{{.NoImplName}})(nil)
+
+{{- range .Fields}}
+
+// Get{{.GoName}} implements {{$.InterfaceName}}.Get{{.GoName}}
+func (*{{$.NoImplName}}) Get{{.GoName}}() {{.Type}} {
+{{- if .IsMessage}}
+	return nil
+{{- else}}
+	var zero {{.Type}}
+	return zero
+{{- end}}
+}
+
+// Set{{.GoName}} implements {{$.InterfaceName}}.Set{{.GoName}}
+func (*{{$.NoImplName}}) Set{{.GoName}}(v {{.Type}}) error {
+	return core.Wrap(core.ErrNotImplemented, "{{$.InterfaceName}}.Set{{.GoName}}")
+}
+{{- if .Optional}}
+
+// Has{{.GoName}} implements {{$.InterfaceName}}.Has{{.GoName}}
+func (*{{$.NoImplName}}) Has{{.GoName}}() bool {
+	return false
+}
+
+// Clear{{.GoName}} implements {{$.InterfaceName}}.Clear{{.GoName}}
+func (*{{$.NoImplName}}) Clear{{.GoName}}() {
+	// No-op
+}
+{{- end}}
+{{- end}}
+
+{{- range .OneOfGroups}}
+
+// Get{{.GoName}} implements {{$.InterfaceName}}.Get{{.GoName}}
+func (*{{$.NoImplName}}) Get{{.GoName}}() is{{$.Name}}_{{.GoName}} {
+	return nil
+}
+
+{{- range .Fields}}
+// Set{{.GoName}} implements {{$.InterfaceName}}.Set{{.GoName}}
+func (*{{$.NoImplName}}) Set{{.GoName}}(v {{.Type}}) error {
+	return core.Wrap(core.ErrNotImplemented, "{{$.InterfaceName}}.Set{{.GoName}}")
+}
+{{- end}}
+{{- end}}
+
+// ProtoReflect implements {{.InterfaceName}}.ProtoReflect
+func (*{{.NoImplName}}) ProtoReflect() protoreflect.Message {
+	return nil
+}
+
+// Reset implements {{.InterfaceName}}.Reset
+func (*{{.NoImplName}}) Reset() {}
+
+// String implements {{.InterfaceName}}.String
+func (*{{.NoImplName}}) String() string {
+	return "{{.NoImplName}}{}"
+}
+
+{{end}}

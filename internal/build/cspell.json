@@ -42,7 +42,8 @@
     "sourcegraph",
     "testutils",
     "tmpl",
-    "Unmarshal"
+    "Unmarshal",
+    "Wrapf"
   ],
   "ignorePaths": [
     "**/*.pb.go",

@@ -41,6 +41,7 @@ type GeneratorOptions struct {
 	InterfacePattern   string // Pattern for interface names, e.g., "I%" or "%Interface"
 	GenerateInterfaces bool
 	GenerateServices   bool
+	GenerateNoImpl     bool // Generate NoImpl structs for interfaces
 }
 
 // HasMessages returns true if the file has message definitions
@@ -68,15 +69,15 @@ func (g *Generator) NeedsTypes(file *protogen.File, opts *GeneratorOptions) bool
 	return g.NeedsMessages(file, opts) || g.NeedsServices(file, opts)
 }
 
-// GenerateFile generates Go code for a single proto file
-func (g *Generator) GenerateFile(file *protogen.File, opts *GeneratorOptions) error {
-	if file == nil {
-		return errors.New("file cannot be nil")
-	}
+// NeedsNoImpl returns true if the file needs NoImpl generation
+func (g *Generator) NeedsNoImpl(file *protogen.File, opts *GeneratorOptions) bool {
+	return opts.GenerateNoImpl && g.NeedsTypes(file, opts)
+}
 
-	// Handle nil options gracefully with defaults
+// normalizeOptions ensures options have valid defaults
+func (*Generator) normalizeOptions(opts *GeneratorOptions) *GeneratorOptions {
 	if opts == nil {
-		opts = &GeneratorOptions{
+		return &GeneratorOptions{
 			InterfacePattern:   DefaultInterfacePattern,
 			GenerateInterfaces: DefaultGenerateInterfaces,
 			GenerateServices:   DefaultGenerateServices,
@@ -88,9 +89,26 @@ func (g *Generator) GenerateFile(file *protogen.File, opts *GeneratorOptions) er
 		opts.InterfacePattern = DefaultInterfacePattern
 	}
 
+	return opts
+}
+
+// GenerateFile generates Go code for a single proto file
+func (g *Generator) GenerateFile(file *protogen.File, opts *GeneratorOptions) error {
+	if file == nil {
+		return errors.New("file cannot be nil")
+	}
+
+	opts = g.normalizeOptions(opts)
+
 	if g.NeedsTypes(file, opts) {
 		if err := g.generateTypesWithTemplate(file, opts); err != nil {
 			return fmt.Errorf("failed to generate types for %s: %w", file.Desc.Path(), err)
+		}
+	}
+
+	if g.NeedsNoImpl(file, opts) {
+		if err := g.generateNoImplWithTemplate(file, opts); err != nil {
+			return fmt.Errorf("failed to generate noImpl for %s: %w", file.Desc.Path(), err)
 		}
 	}
 

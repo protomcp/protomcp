@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"darvaza.org/core"
 	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	gengo "protomcp.org/protomcp/pkg/generator/gen-go"
 )
@@ -40,6 +42,37 @@ func (g *Generator) generateTypesWithTemplate(file *protogen.File, opts *Generat
 	return nil
 }
 
+// generateNoImplWithTemplate generates NoImpl structs in a separate file
+func (g *Generator) generateNoImplWithTemplate(file *protogen.File, opts *GeneratorOptions) error {
+	if file == nil {
+		return core.Wrap(core.ErrInvalid, "file")
+	}
+	filename := file.GeneratedFilenamePrefix + ".noimpl.go"
+	genFile := g.plugin.NewGeneratedFile(filename, file.GoImportPath)
+
+	// Prepare template data
+	data := g.prepareNoImplTemplateData(file, opts)
+
+	// Process messages and services
+	if opts.GenerateInterfaces {
+		g.processMessages(genFile, file.Messages, opts, data)
+	}
+	if opts.GenerateServices {
+		g.processServices(genFile, file.Services, opts, data)
+	}
+
+	// Render template
+	var buf bytes.Buffer
+	if err := templates.ExecuteTemplate(&buf, noImplFileTemplate, data); err != nil {
+		return core.Wrapf(err, "failed to execute template %q for file %q", noImplFileTemplate, filename)
+	}
+
+	// Write to generated file
+	genFile.P(buf.String())
+
+	return nil
+}
+
 // prepareTemplateData creates the base template data structure
 func (g *Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
 	// Collect imports as paths
@@ -60,6 +93,39 @@ func (g *Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOpti
 		ImportGroups: importGroups,
 		Messages:     make([]MessageData, 0, len(file.Messages)),
 		Services:     make([]ServiceData, 0, len(file.Services)),
+		NoImpl:       opts.GenerateNoImpl,
+	}
+}
+
+// prepareNoImplTemplateData creates template data for NoImpl file
+func (g *Generator) prepareNoImplTemplateData(file *protogen.File, opts *GeneratorOptions) *TemplateData {
+	// Collect imports as paths
+	var stdPaths []string
+	var thirdPartyPaths []string
+
+	// Add context import if we have services (standard library)
+	if g.HasServices(file) && opts.GenerateServices {
+		stdPaths = append(stdPaths, "context")
+	}
+
+	// Add required imports for NoImpl only if we have content
+	if g.NeedsNoImpl(file, opts) {
+		thirdPartyPaths = append(thirdPartyPaths, "darvaza.org/core")
+		if g.HasMessages(file) && opts.GenerateInterfaces {
+			thirdPartyPaths = append(thirdPartyPaths, "google.golang.org/protobuf/reflect/protoreflect")
+		}
+	}
+
+	// Use GenerateImports to process and organize imports
+	importGroups := gengo.GenerateImports(stdPaths, thirdPartyPaths)
+
+	return &TemplateData{
+		Package:      string(file.GoPackageName),
+		SourceFile:   file.Desc.Path(),
+		ImportGroups: importGroups,
+		Messages:     make([]MessageData, 0, len(file.Messages)),
+		Services:     make([]ServiceData, 0, len(file.Services)),
+		NoImpl:       true,
 	}
 }
 
@@ -90,6 +156,7 @@ func (*Generator) buildMessageData(gen *protogen.GeneratedFile, msg *protogen.Me
 	data := MessageData{
 		Name:          msg.GoIdent.GoName,
 		InterfaceName: gengo.InterfaceNameForMessage(msg, opts.InterfacePattern),
+		NoImplName:    "NoImpl" + msg.GoIdent.GoName,
 		Comment:       strings.TrimSpace(string(msg.Comments.Leading)),
 		Fields:        make([]FieldData, 0, len(msg.Fields)),
 		OneOfGroups:   make([]OneOfData, 0, len(OneOfGroups(msg))),
@@ -113,12 +180,13 @@ func processRegularFields(gen *protogen.GeneratedFile, msg *protogen.Message,
 		}
 
 		fieldData := FieldData{
-			Name:     string(field.Desc.Name()),
-			GoName:   field.GoName,
-			Type:     gengo.GoTypeForFieldWithPattern(gen, field, opts.InterfacePattern),
-			Comment:  strings.TrimSpace(string(field.Comments.Leading)),
-			Optional: field.Desc.HasOptionalKeyword(),
-			IsOneOf:  false,
+			Name:      string(field.Desc.Name()),
+			GoName:    field.GoName,
+			Type:      gengo.GoTypeForFieldWithPattern(gen, field, opts.InterfacePattern),
+			Comment:   strings.TrimSpace(string(field.Comments.Leading)),
+			Optional:  field.Desc.HasOptionalKeyword(),
+			IsOneOf:   false,
+			IsMessage: field.Desc.Kind() == protoreflect.MessageKind,
 		}
 		data.Fields = append(data.Fields, fieldData)
 	}
@@ -163,6 +231,7 @@ func (*Generator) buildServiceData(_ *protogen.GeneratedFile, svc *protogen.Serv
 	data := ServiceData{
 		Name:          svc.GoName,
 		InterfaceName: gengo.InterfaceNameForService(svc, opts.InterfacePattern),
+		NoImplName:    "NoImpl" + svc.GoName,
 		Comment:       strings.TrimSpace(string(svc.Comments.Leading)),
 		Methods:       make([]MethodData, 0, len(svc.Methods)),
 	}

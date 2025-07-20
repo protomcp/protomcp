@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"protomcp.org/protomcp/pkg/generator/testutils"
@@ -29,21 +28,15 @@ func (tc hasContentTestCase) test(t *testing.T) {
 	t.Helper()
 
 	protoFile := tc.setupFile()
-	req := testutils.NewCodeGenRequest(protoFile)
-	gen := tc.newGenerator(t)
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+	gen := NewGenerator(plugin)
 
-	testutils.RunGenerator(t, req, gen)
-}
-
-func (tc hasContentTestCase) newGenerator(t *testing.T) func(*protogen.Plugin) error {
-	return func(plugin *protogen.Plugin) error {
-		gen := NewGenerator(plugin)
-
-		for _, file := range plugin.Files {
-			testutils.AssertEqual(t, gen.HasMessages(file), tc.hasMessages, "HasMessages()")
-			testutils.AssertEqual(t, gen.HasServices(file), tc.hasServices, "HasServices()")
-		}
-		return nil
+	for _, file := range plugin.Files {
+		testutils.AssertEqual(t, gen.HasMessages(file), tc.hasMessages, "HasMessages()")
+		testutils.AssertEqual(t, gen.HasServices(file), tc.hasServices, "HasServices()")
 	}
 }
 
@@ -60,20 +53,14 @@ func (tc needsTypesTestCase) test(t *testing.T) {
 	t.Helper()
 
 	protoFile := tc.setupFile()
-	req := testutils.NewCodeGenRequest(protoFile)
-	gen := tc.newGenerator(t)
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+	gen := NewGenerator(plugin)
 
-	testutils.RunGenerator(t, req, gen)
-}
-
-func (tc needsTypesTestCase) newGenerator(t *testing.T) func(*protogen.Plugin) error {
-	return func(plugin *protogen.Plugin) error {
-		gen := NewGenerator(plugin)
-
-		for _, file := range plugin.Files {
-			testutils.AssertEqual(t, gen.NeedsTypes(file, tc.opts), tc.needsTypes, "NeedsTypes()")
-		}
-		return nil
+	for _, file := range plugin.Files {
+		testutils.AssertEqual(t, gen.NeedsTypes(file, tc.opts), tc.needsTypes, "NeedsTypes()")
 	}
 }
 
@@ -90,22 +77,16 @@ func (tc templateDataTestCase) test(t *testing.T) {
 	t.Helper()
 
 	protoFile := tc.setupFile()
-	req := testutils.NewCodeGenRequest(protoFile)
-	gen := tc.newGenerator(t)
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+	gen := NewGenerator(plugin)
 
-	testutils.RunGenerator(t, req, gen)
-}
-
-func (tc templateDataTestCase) newGenerator(t *testing.T) func(*protogen.Plugin) error {
-	return func(plugin *protogen.Plugin) error {
-		gen := NewGenerator(plugin)
-
-		for _, file := range plugin.Files {
-			data := gen.prepareTemplateData(file, tc.opts)
-			got := extractImportPaths(data)
-			testutils.AssertSliceOfSlicesEqual(t, got, tc.want, "imports")
-		}
-		return nil
+	for _, file := range plugin.Files {
+		data := gen.prepareTemplateData(file, tc.opts)
+		got := extractImportPaths(data)
+		testutils.AssertSliceOfSlicesEqual(t, got, tc.want, "imports")
 	}
 }
 
@@ -363,6 +344,103 @@ func generatorImportsTestCases() []templateDataTestCase {
 
 func TestGeneratorImports(t *testing.T) {
 	tests := generatorImportsTestCases()
+
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
+}
+
+// noImplTestCase represents a test case for NoImpl template data
+type noImplTestCase struct {
+	name      string
+	setupFile func() *descriptorpb.FileDescriptorProto
+	opts      *GeneratorOptions
+	want      [][]string
+}
+
+// test runs the NoImpl test case
+func (tc noImplTestCase) test(t *testing.T) {
+	t.Helper()
+
+	protoFile := tc.setupFile()
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+	gen := NewGenerator(plugin)
+
+	for _, file := range plugin.Files {
+		data := gen.prepareNoImplTemplateData(file, tc.opts)
+		got := extractImportPaths(data)
+		testutils.AssertSliceOfSlicesEqual(t, got, tc.want, "NoImpl imports")
+	}
+}
+
+func TestGeneratorNoImplImports(t *testing.T) {
+	tests := []noImplTestCase{
+		{
+			name: "messages with NoImpl",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage"),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateInterfaces: true,
+				GenerateServices:   false,
+				GenerateNoImpl:     true,
+			},
+			want: [][]string{
+				{"darvaza.org/core", "google.golang.org/protobuf/reflect/protoreflect"},
+			},
+		},
+		{
+			name: "services with NoImpl",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				serviceName := testServiceName
+				file.Service = []*descriptorpb.ServiceDescriptorProto{
+					{Name: &serviceName},
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateInterfaces: false,
+				GenerateServices:   true,
+				GenerateNoImpl:     true,
+			},
+			want: [][]string{
+				{"context"},
+				{"darvaza.org/core"},
+			},
+		},
+		{
+			name: "enums only with NoImpl enabled - no imports",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				enumName := testEnumName
+				valueName := testEnumValue
+				var valueNumber int32
+				file.EnumType = []*descriptorpb.EnumDescriptorProto{
+					{
+						Name: &enumName,
+						Value: []*descriptorpb.EnumValueDescriptorProto{
+							{Name: &valueName, Number: &valueNumber},
+						},
+					},
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+				GenerateNoImpl:     true,
+			},
+			want: [][]string{},
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, tt.test)
