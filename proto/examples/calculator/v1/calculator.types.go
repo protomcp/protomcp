@@ -169,9 +169,9 @@ type IUserInfo interface {
 	SetAge(v int32) error
 }
 
-// CalculatorServiceService is the interface for CalculatorService
+// ICalculatorService is the interface for CalculatorService
 // Calculator service provides basic arithmetic operations
-type CalculatorServiceService interface {
+type ICalculatorService interface {
 
 	// Add two numbers
 	Add(ctx context.Context, req IAddRequest) (IAddResponse, error)

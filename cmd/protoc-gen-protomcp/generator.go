@@ -43,6 +43,31 @@ type GeneratorOptions struct {
 	GenerateServices   bool
 }
 
+// HasMessages returns true if the file has message definitions
+func (*Generator) HasMessages(file *protogen.File) bool {
+	return file != nil && len(file.Messages) > 0
+}
+
+// HasServices returns true if the file has service definitions
+func (*Generator) HasServices(file *protogen.File) bool {
+	return file != nil && len(file.Services) > 0
+}
+
+// NeedsMessages returns true if the file needs message interface generation
+func (g *Generator) NeedsMessages(file *protogen.File, opts *GeneratorOptions) bool {
+	return g.HasMessages(file) && opts.GenerateInterfaces
+}
+
+// NeedsServices returns true if the file needs service interface generation
+func (g *Generator) NeedsServices(file *protogen.File, opts *GeneratorOptions) bool {
+	return g.HasServices(file) && opts.GenerateServices
+}
+
+// NeedsTypes returns true if the file needs type generation
+func (g *Generator) NeedsTypes(file *protogen.File, opts *GeneratorOptions) bool {
+	return g.NeedsMessages(file, opts) || g.NeedsServices(file, opts)
+}
+
 // GenerateFile generates Go code for a single proto file
 func (g *Generator) GenerateFile(file *protogen.File, opts *GeneratorOptions) error {
 	if file == nil {
@@ -63,7 +88,7 @@ func (g *Generator) GenerateFile(file *protogen.File, opts *GeneratorOptions) er
 		opts.InterfacePattern = DefaultInterfacePattern
 	}
 
-	if opts.GenerateInterfaces || opts.GenerateServices {
+	if g.NeedsTypes(file, opts) {
 		if err := g.generateTypesWithTemplate(file, opts); err != nil {
 			return fmt.Errorf("failed to generate types for %s: %w", file.Desc.Path(), err)
 		}

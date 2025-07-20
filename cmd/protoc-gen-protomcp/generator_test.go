@@ -20,6 +20,9 @@ func runGenerator(
 	return testutils.RunGenerator(t, req, func(plugin *protogen.Plugin) error {
 		gen := NewGenerator(plugin)
 		for _, file := range plugin.Files {
+			if !file.Generate {
+				continue
+			}
 			if err := gen.GenerateFile(file, opts); err != nil {
 				return err
 			}
@@ -189,9 +192,12 @@ func TestGenerateServiceInterface(t *testing.T) {
 
 	// Check expected content
 	expectedStrings := []string{
-		"type CalculatorService interface {",                              // Service interface declaration
-		"Add(ctx context.Context, req IAddRequest) (IAddResponse, error)", // Add method signature
-		`"context"`, // Context import
+		// Service interface declaration with I% pattern
+		"type ICalculatorService interface {",
+		// Add method signature
+		"Add(ctx context.Context, req IAddRequest) (IAddResponse, error)",
+		// Context import
+		`"context"`,
 	}
 
 	for _, expected := range expectedStrings {
