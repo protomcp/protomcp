@@ -50,7 +50,6 @@ func testNeedsNoImplDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 	file := plugin.Files[0]
 
 	opts := &GeneratorOptions{
@@ -58,7 +57,7 @@ func testNeedsNoImplDisabled(t *testing.T) {
 		GenerateNoImpl:     false,
 	}
 
-	if gen.NeedsNoImpl(file, opts) {
+	if opts.NeedsNoImpl(file) {
 		t.Error("NeedsNoImpl should return false when GenerateNoImpl is false")
 	}
 }
@@ -75,7 +74,6 @@ func testNeedsNoImplNoInterfaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 	file := plugin.Files[0]
 
 	opts := &GeneratorOptions{
@@ -83,7 +81,7 @@ func testNeedsNoImplNoInterfaces(t *testing.T) {
 		GenerateNoImpl:     true,
 	}
 
-	if gen.NeedsNoImpl(file, opts) {
+	if opts.NeedsNoImpl(file) {
 		t.Error("NeedsNoImpl should return false when GenerateInterfaces is false")
 	}
 }
@@ -100,7 +98,6 @@ func testNeedsNoImplWithMessages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 	file := plugin.Files[0]
 
 	opts := &GeneratorOptions{
@@ -108,7 +105,7 @@ func testNeedsNoImplWithMessages(t *testing.T) {
 		GenerateNoImpl:     true,
 	}
 
-	if !gen.NeedsNoImpl(file, opts) {
+	if !opts.NeedsNoImpl(file) {
 		t.Error("NeedsNoImpl should return true with messages and both options enabled")
 	}
 }
@@ -120,7 +117,6 @@ func testNeedsNoImplWithServices(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 	file := plugin.Files[0]
 
 	opts := &GeneratorOptions{
@@ -128,7 +124,7 @@ func testNeedsNoImplWithServices(t *testing.T) {
 		GenerateNoImpl:   true,
 	}
 
-	if !gen.NeedsNoImpl(file, opts) {
+	if !opts.NeedsNoImpl(file) {
 		t.Error("NeedsNoImpl should return true with services and both options enabled")
 	}
 }
@@ -140,7 +136,6 @@ func testNeedsNoImplNoServices(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 	file := plugin.Files[0]
 
 	opts := &GeneratorOptions{
@@ -148,7 +143,7 @@ func testNeedsNoImplNoServices(t *testing.T) {
 		GenerateNoImpl:   true,
 	}
 
-	if gen.NeedsNoImpl(file, opts) {
+	if opts.NeedsNoImpl(file) {
 		t.Error("NeedsNoImpl should return false when GenerateServices is false")
 	}
 }
@@ -161,7 +156,6 @@ func testNeedsNoImplEmptyFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create plugin: %v", err)
 	}
-	gen := NewGenerator(plugin)
 	file := plugin.Files[0]
 
 	opts := &GeneratorOptions{
@@ -170,7 +164,7 @@ func testNeedsNoImplEmptyFile(t *testing.T) {
 		GenerateNoImpl:     true,
 	}
 
-	if gen.NeedsNoImpl(file, opts) {
+	if opts.NeedsNoImpl(file) {
 		t.Error("NeedsNoImpl should return false for empty file")
 	}
 }
