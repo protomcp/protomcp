@@ -11,6 +11,7 @@
     "coverprofile",
     "darvaza",
     "descriptorpb",
+    "Fprintf",
     "golangci",
     "GOTEST",
     "jsonrpc",

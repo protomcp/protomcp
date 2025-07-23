@@ -60,6 +60,53 @@ func TestMyGenerator(t *testing.T) {
 - Comprehensive assertion helpers for testing generated code
 - Support for creating complex proto definitions programmatically
 - Integration with protogen for generator development
+- LazyBuffer utility for efficient string building
+
+## LazyBuffer Utility
+
+The package provides a LazyBuffer type that wraps strings.Builder but doesn't
+return errors - hence "lazy". No more `_, _ =` error handling:
+
+```go
+import "protomcp.org/protomcp/pkg/generator"
+
+// Create a buffer
+var buf generator.LazyBuffer
+
+// Append strings without error handling (empty strings are ignored)
+buf.WriteString("Hello", " ", "World")  // No _, _ = needed!
+
+// Append runes (including Unicode)
+buf.WriteRunes(' ', '-', ' ', '🚀')
+
+// Printf formatting without error handling
+buf.Printf(" count: %d", 42)  // No _, _ = needed!
+
+// Get the result
+result := buf.String() // "Hello World - 🚀 count: 42"
+
+// Method chaining for fluent API
+message := buf.WriteString("Status: ").
+    Printf("%d%%", 100).
+    WriteRunes(' ', '✓').
+    String() // "Status: 100% ✓"
+
+// Compare with strings.Builder:
+var sb strings.Builder
+_, _ = sb.WriteString("Hello")  // Must handle error return
+_, _ = sb.WriteRune(' ')         // Must handle error return
+_, _ = fmt.Fprintf(&sb, "%d", 42)  // Must handle error return
+
+// Bonus: nil-safe operations
+var nilBuf *generator.LazyBuffer
+nilBuf.WriteString("test") // Won't panic
+nilBuf.WriteRunes('a', 'b') // Won't panic
+str := nilBuf.String()      // Returns empty string
+```
+
+LazyBuffer is particularly useful in code generators where you frequently build
+strings and don't want to clutter your code with error handling that will never
+actually error.
 
 [godoc-badge]: https://pkg.go.dev/badge/protomcp.org/protomcp/pkg/generator.svg
 [godoc-link]: https://pkg.go.dev/protomcp.org/protomcp/pkg/generator
