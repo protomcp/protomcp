@@ -134,6 +134,27 @@ When `PROTOMCP_TRACE` is set, trace messages include the source location:
 This is particularly useful when debugging complex code generation logic or
 understanding the flow of your generator during development.
 
+### Debug vs Trace
+
+The package also provides a Debug() function for simpler debug output without
+location information:
+
+```go
+// Enable debugging
+os.Setenv("PROTOMCP_DEBUG", "1")
+
+// Debug output (no location info)
+generator.Debug("Configuration loaded: %s", configPath)
+// Output: [DEBUG] Configuration loaded: /etc/protomcp.yaml
+
+// Trace output (includes location)
+generator.Trace("Processing method: %s", methodName)
+// Output: [TRACE generator/methods.go:89] Processing method: GetUser
+```
+
+Use Debug() for general information and Trace() when you need to understand
+code flow and execution paths.
+
 [godoc-badge]: https://pkg.go.dev/badge/protomcp.org/protomcp/pkg/generator.svg
 [godoc-link]: https://pkg.go.dev/protomcp.org/protomcp/pkg/generator
 [codecov-badge]: https://codecov.io/gh/protomcp/protomcp/graph/badge.svg?flag=generator
