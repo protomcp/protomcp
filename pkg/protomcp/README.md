@@ -32,15 +32,15 @@ validation utilities.
 ## Usage
 
 ```go
-import "github.com/protomcp/protomcp/pkg/protomcp"
+import "protomcp.org/protomcp/pkg/protomcp"
 ```
 
 Generated code imports this package to access protocol implementations,
 validation utilities, and transport servers.
 
-[godoc-badge]: https://pkg.go.dev/badge/github.com/protomcp/protomcp/pkg/protomcp.svg
-[godoc-link]: https://pkg.go.dev/github.com/protomcp/protomcp/pkg/protomcp
+[godoc-badge]: https://pkg.go.dev/badge/protomcp.org/protomcp/pkg/protomcp.svg
+[godoc-link]: https://pkg.go.dev/protomcp.org/protomcp/pkg/protomcp
 [codecov-badge]: https://codecov.io/gh/protomcp/protomcp/graph/badge.svg?flag=protomcp
 [codecov-link]: https://codecov.io/gh/protomcp/protomcp?flag=protomcp
-[goreport-badge]: https://goreportcard.com/badge/github.com/protomcp/protomcp
-[goreport-link]: https://goreportcard.com/report/github.com/protomcp/protomcp
+[goreport-badge]: https://goreportcard.com/badge/protomcp.org/protomcp
+[goreport-link]: https://goreportcard.com/report/protomcp.org/protomcp

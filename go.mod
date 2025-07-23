@@ -1,5 +1,5 @@
-module github.com/protomcp/protomcp
+module protomcp.org/protomcp
 
 go 1.23.0
 
-replace github.com/protomcp/protomcp/pkg/protomcp => ./pkg/protomcp
+replace protomcp.org/protomcp/pkg/protomcp => ./pkg/protomcp

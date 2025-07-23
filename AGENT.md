@@ -19,7 +19,7 @@ emphasizing interface-based design for modularity.
 
 Before starting development, ensure you have:
 
-- Go 1.24.4 or later installed (check with `go version`).
+- Go 1.23 or later installed (check with `go version`).
 - `make` command available (usually pre-installed on Unix systems).
 - Protocol Buffers compiler (`protoc`) installed.
 - `pnpm` for JavaScript/TypeScript tooling (preferred over npm).
@@ -66,7 +66,7 @@ make generate
 The project uses a sophisticated build system inherited from nanorpc that
 handles multiple Go modules:
 
-- **Root module**: `github.com/amery/protomcp`
+- **Root module**: `protomcp.org/protomcp`
 - **Submodules**: Package-specific modules as needed.
 - **Dynamic rules**: Generated via `internal/build/gen_mk.sh`.
 - **Dependency tracking**: Handles inter-module dependencies.
@@ -202,7 +202,7 @@ make test-protomcp
 
 ### Build System
 
-- Go 1.24.4 is the minimum required version
+- Go 1.23 is the minimum required version
 - The Makefile dynamically generates rules for submodules
 - Tool versions are selected based on Go version
 - All tools are auto-detected with fallback to no-op

@@ -4,7 +4,7 @@
 //
 // # Installation
 //
-//	go install github.com/protomcp/protomcp/cmd/protoc-gen-protomcp@latest
+//	go install protomcp.org/protomcp/cmd/protoc-gen-protomcp@latest
 //
 // # Usage
 //
