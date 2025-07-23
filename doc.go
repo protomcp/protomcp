@@ -20,7 +20,6 @@
 //
 //   - cmd/protoc-gen-protomcp: Protocol buffer compiler plugin for Go code generation
 //   - cmd/protoc-gen-protomcp-ts: Protocol buffer compiler plugin for TypeScript generation
-//   - pkg/base: Shared base types and interfaces used across all protocols
 //   - pkg/protomcp: Core library with protocol implementations and utilities
 //
 // This is the parent module that coordinates the build and testing of all

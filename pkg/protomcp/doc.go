@@ -23,7 +23,6 @@
 //
 // This package integrates with:
 //
-//   - pkg/base for shared types and interfaces
 //   - darvaza.org/core for error handling and utilities
 //   - darvaza.org/slog for structured logging
 //   - encoding/json/v2 for modern JSON handling

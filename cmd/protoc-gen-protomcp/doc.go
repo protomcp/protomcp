@@ -40,6 +40,5 @@
 //   - protomcp.jsonrpc: JSON-RPC method options
 //   - protomcp.mcp: MCP tool/resource definitions
 //
-// The generated code integrates with pkg/protomcp for runtime support
-// and pkg/base for shared types.
+// The generated code integrates with pkg/protomcp for runtime support.
 package main
