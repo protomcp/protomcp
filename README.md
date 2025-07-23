@@ -84,9 +84,9 @@ See [AGENT.md](AGENT.md) for development guidelines and build system details.
 This project is licensed under the MIT License—see the
 [LICENCE.txt](LICENCE.txt) file for details.
 
-[godoc-badge]: https://pkg.go.dev/badge/github.com/protomcp/protomcp.svg
-[godoc-link]: https://pkg.go.dev/github.com/protomcp/protomcp
+[godoc-badge]: https://pkg.go.dev/badge/protomcp.org/protomcp.svg
+[godoc-link]: https://pkg.go.dev/protomcp.org/protomcp
 [codecov-badge]: https://codecov.io/gh/protomcp/protomcp/graph/badge.svg?flag=root
 [codecov-link]: https://codecov.io/gh/protomcp/protomcp?flag=root
-[goreport-badge]: https://goreportcard.com/badge/github.com/protomcp/protomcp
-[goreport-link]: https://goreportcard.com/report/github.com/protomcp/protomcp
+[goreport-badge]: https://goreportcard.com/badge/protomcp.org/protomcp
+[goreport-link]: https://goreportcard.com/report/protomcp.org/protomcp

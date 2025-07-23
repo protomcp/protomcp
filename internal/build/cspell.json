@@ -10,17 +10,22 @@
     "coverpkg",
     "coverprofile",
     "darvaza",
+    "descriptorpb",
+    "Fprintf",
     "golangci",
     "GOTEST",
     "jsonrpc",
     "languagetool",
     "nanorpc",
+    "pluginpb",
     "protobuf",
     "protoc",
+    "protogen",
     "protomcp",
     "QUIC",
     "shellcheck",
-    "sourcegraph"
+    "sourcegraph",
+    "testutils"
   ],
   "ignorePaths": [
     "*.lock",
