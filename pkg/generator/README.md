@@ -61,6 +61,7 @@ func TestMyGenerator(t *testing.T) {
 - Support for creating complex proto definitions programmatically
 - Integration with protogen for generator development
 - LazyBuffer utility for efficient string building
+- Built-in trace utilities for debugging code generation
 
 ## LazyBuffer Utility
 
@@ -107,6 +108,31 @@ str := nilBuf.String()      // Returns empty string
 LazyBuffer is particularly useful in code generators where you frequently build
 strings and don't want to clutter your code with error handling that will never
 actually error.
+
+## Debugging with Trace
+
+The package provides a trace utility for debugging code generation:
+
+```go
+import "protomcp.org/protomcp/pkg/generator"
+
+// Enable tracing by setting the environment variable
+os.Setenv("PROTOMCP_TRACE", "1")
+
+// Use trace in your generator
+generator.Trace("Processing service %s", serviceName)
+generator.Trace("Generated %d methods", len(methods))
+```
+
+When `PROTOMCP_TRACE` is set, trace messages include the source location:
+
+```text
+[TRACE generator/mycode.go:42] Processing service UserService
+[TRACE generator/mycode.go:45] Generated 3 methods
+```
+
+This is particularly useful when debugging complex code generation logic or
+understanding the flow of your generator during development.
 
 [godoc-badge]: https://pkg.go.dev/badge/protomcp.org/protomcp/pkg/generator.svg
 [godoc-link]: https://pkg.go.dev/protomcp.org/protomcp/pkg/generator
