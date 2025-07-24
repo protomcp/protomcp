@@ -154,6 +154,22 @@ Tool configurations are stored in `internal/build/`:
 The project enforces quality through:
 
 - **Go standards**: Standard Go conventions and formatting
+- **Field alignment**: Structs optimized for memory efficiency
+
+  ```bash
+  # Fix field alignment issues (exclude generated files like *.pb.go)
+  GOXTOOLS="golang.org/x/tools/go/analysis/passes"
+  FA="$GOXTOOLS/fieldalignment/cmd/fieldalignment"
+  # Only run on hand-written files, not generated ones
+  go run "$FA@latest" -fix <files>
+
+  # For test files with complex types, create a temporary file:
+  # 1. Copy struct definitions to a temp.go file with simplified types
+  # 2. Run fieldalignment on the temp file
+  # 3. Apply the suggested field ordering to the test files
+  # 4. Remove the temp file
+  ```
+
 - **Interface patterns**: Prefer interfaces over concrete types
 - **Validation**: JSON Schema validation for all external inputs
 - **Testing**: Comprehensive unit and integration tests
