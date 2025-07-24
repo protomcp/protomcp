@@ -250,6 +250,128 @@ func TestRunGenerator(t *testing.T) {
 	}
 }
 
+// getGeneratedFileContentTestCase represents a test case for GetGeneratedFileContent
+type getGeneratedFileContentTestCase struct {
+	setupPlugin func(t *testing.T) *protogen.Plugin
+	name        string
+	filename    string
+	expectFound bool
+}
+
+// test runs the GetGeneratedFileContent test case
+func (tc getGeneratedFileContentTestCase) test(t *testing.T) {
+	t.Helper()
+
+	plugin := tc.setupPlugin(t)
+
+	content, ok := testutils.GetGeneratedFileContent(t, plugin, tc.filename)
+	testutils.AssertEqual(t, ok, tc.expectFound, "file found")
+
+	if tc.expectFound && tc.filename == "test.go" {
+		expectedContent := "package test\n\n// Generated content\n"
+		testutils.AssertEqual(t, content, expectedContent, "file content")
+	}
+}
+
+// setupPluginWithGeneratedFile creates a plugin with a single generated file "test.go"
+// containing basic package declaration and a comment.
+func setupPluginWithGeneratedFile(t *testing.T) *protogen.Plugin {
+	protoFile := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+	protoFile.MessageType = []*descriptorpb.DescriptorProto{
+		testutils.NewMessage("TestMessage",
+			testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+		),
+	}
+
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+
+	// Simulate generating a file
+	genFile := plugin.NewGeneratedFile("test.go", protogen.GoImportPath(protoFile.GetOptions().GetGoPackage()))
+	genFile.P("package test")
+	genFile.P("")
+	genFile.P("// Generated content")
+
+	return plugin
+}
+
+// newGeneratedFileContentTestCase creates a new test case for GetGeneratedFileContent
+func newGeneratedFileContentTestCase(
+	name, filename string, expectFound bool,
+	setupPlugin func(t *testing.T) *protogen.Plugin,
+) getGeneratedFileContentTestCase {
+	return getGeneratedFileContentTestCase{
+		setupPlugin: setupPlugin,
+		name:        name,
+		filename:    filename,
+		expectFound: expectFound,
+	}
+}
+
+func TestGetGeneratedFileContent(t *testing.T) {
+	setupPlugin := setupPluginWithGeneratedFile
+	tests := []getGeneratedFileContentTestCase{
+		newGeneratedFileContentTestCase("existing file", "test.go", true, setupPlugin),
+		newGeneratedFileContentTestCase("non-existent file", "non-existent.go", false, setupPlugin),
+		newGeneratedFileContentTestCase("empty filename", "", false, setupPlugin),
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
+}
+
+// multipleFilesTestCase represents a test case for multiple file generation
+type multipleFilesTestCase struct {
+	name    string
+	content string
+}
+
+// test runs the multiple files test case
+func (tc multipleFilesTestCase) test(t *testing.T, plugin *protogen.Plugin) {
+	t.Helper()
+
+	content, ok := testutils.GetGeneratedFileContent(t, plugin, tc.name)
+	if !ok {
+		t.Fatalf("Expected to find file %s", tc.name)
+	}
+	expectedContent := tc.content + "\n"
+	testutils.AssertEqual(t, content, expectedContent, "file content")
+}
+
+func TestGetGeneratedFileContent_MultipleFiles(t *testing.T) {
+	// Create a proto file
+	protoFile := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+
+	// Create plugin
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+
+	// Define test cases
+	files := []multipleFilesTestCase{
+		{"file1.go", "package test\n\n// File 1"},
+		{"file2.go", "package test\n\n// File 2"},
+		{"file3.go", "package test\n\n// File 3"},
+	}
+
+	// Generate files
+	for _, f := range files {
+		genFile := plugin.NewGeneratedFile(f.name, protogen.GoImportPath(protoFile.GetOptions().GetGoPackage()))
+		genFile.P(f.content)
+	}
+
+	// Test retrieving each file
+	for _, f := range files {
+		t.Run(f.name, func(t *testing.T) {
+			f.test(t, plugin)
+		})
+	}
+}
+
 func TestCompleteExample(t *testing.T) {
 	// This test demonstrates a complete example of using the factory functions
 	// to create a proto file with messages, enums, and services

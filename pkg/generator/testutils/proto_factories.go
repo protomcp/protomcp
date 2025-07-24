@@ -120,3 +120,17 @@ func RunGenerator(
 
 	return plugin.Response()
 }
+
+// GetGeneratedFileContent returns the content of a generated file by name
+func GetGeneratedFileContent(t *testing.T, plugin *protogen.Plugin, filename string) (string, bool) {
+	t.Helper()
+
+	response := plugin.Response()
+	for _, file := range response.File {
+		if file.GetName() == filename {
+			return file.GetContent(), true
+		}
+	}
+
+	return "", false
+}
