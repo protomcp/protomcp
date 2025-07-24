@@ -325,6 +325,109 @@ func testAssertEqualFormatString(t *testing.T) {
 	}
 }
 
+func TestAssertTypeIs(t *testing.T) {
+	t.Run("successful type assertion", testAssertTypeIsSuccess)
+	t.Run("failed type assertion", testAssertTypeIsFailed)
+	t.Run("with format string", testAssertTypeIsFormatString)
+	t.Run("interface types", testAssertTypeIsInterface)
+}
+
+func testAssertTypeIsSuccess(t *testing.T) {
+	mt := &mockT{}
+	var val any = "hello"
+
+	result, ok := testutils.AssertTypeIs[string](mt, val, "value")
+
+	if !mt.helperCalled {
+		t.Error("Helper() was not called")
+	}
+	if len(mt.errors) > 0 {
+		t.Errorf("unexpected error: %v", mt.errors)
+	}
+	if !ok {
+		t.Error("expected type assertion to succeed")
+	}
+	if result != "hello" {
+		t.Errorf("expected 'hello', got %q", result)
+	}
+}
+
+func testAssertTypeIsFailed(t *testing.T) {
+	mt := &mockT{}
+	var val any = 123
+
+	result, ok := testutils.AssertTypeIs[string](mt, val, "value")
+
+	if len(mt.errors) == 0 {
+		t.Error("expected error but got none")
+	}
+	if !strings.Contains(mt.errors[0], "expected type string") {
+		t.Errorf("error should mention expected type: %s", mt.errors[0])
+	}
+	if !strings.Contains(mt.errors[0], "got int") {
+		t.Errorf("error should mention actual type: %s", mt.errors[0])
+	}
+	if ok {
+		t.Error("expected type assertion to fail")
+	}
+	if result != "" {
+		t.Errorf("expected empty string (zero value), got %q", result)
+	}
+}
+
+func testAssertTypeIsFormatString(t *testing.T) {
+	mt := &mockT{}
+	var val any = 42.5
+
+	_, ok := testutils.AssertTypeIs[string](mt, val, "item[%d].%s", 3, "value")
+
+	if len(mt.errors) == 0 {
+		t.Error("expected error")
+	}
+	if !strings.Contains(mt.errors[0], "item[3].value") {
+		t.Errorf("expected formatted name in error, got: %s", mt.errors[0])
+	}
+	if ok {
+		t.Error("expected type assertion to fail")
+	}
+}
+
+func testAssertTypeIsInterface(t *testing.T) {
+	mt := &mockT{}
+
+	// Test with error interface
+	var val any = fmt.Errorf("test error")
+	err, ok := testutils.AssertTypeIs[error](mt, val, "error value")
+
+	if len(mt.errors) > 0 {
+		t.Errorf("unexpected error: %v", mt.errors)
+	}
+	if !ok {
+		t.Error("expected type assertion to succeed")
+	}
+	if err == nil || err.Error() != "test error" {
+		t.Errorf("expected 'test error', got %v", err)
+	}
+
+	// Test with custom interface
+	type Stringer interface {
+		String() string
+	}
+	mt = &mockT{}
+	var strVal any = "hello"
+	result, ok := testutils.AssertTypeIs[Stringer](mt, strVal, "stringer")
+
+	if len(mt.errors) == 0 {
+		t.Error("expected error for non-Stringer type")
+	}
+	if ok {
+		t.Error("expected type assertion to fail")
+	}
+	if result != nil {
+		t.Errorf("expected nil (zero value for interface), got %v", result)
+	}
+}
+
 func TestMockTBehaviour(t *testing.T) {
 	t.Run("Helper is called", func(t *testing.T) {
 		mt := &mockT{}
