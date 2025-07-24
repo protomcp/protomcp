@@ -27,6 +27,12 @@
 //   - AssertSliceEqual: Compares string slices
 //   - AssertSliceOfSlicesEqual: Compares nested string slices
 //
+// The assertion functions that take a name parameter support format strings:
+//
+//	AssertEqual(t, got, want, "field")                    // Simple name
+//	AssertEqual(t, got, want, "item[%d]", index)         // Format string
+//	AssertSliceEqual(t, got, want, "config.%s", section) // With context
+//
 // # Running Generators
 //
 // The RunGenerator function provides a convenient way to execute a generator

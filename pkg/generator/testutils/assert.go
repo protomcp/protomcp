@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"fmt"
 	"strings"
 
 	"google.golang.org/protobuf/types/pluginpb"
@@ -24,32 +25,47 @@ func AssertFileCount(t T, response *pluginpb.CodeGeneratorResponse, expected int
 	}
 }
 
-// AssertSliceEqual checks if two string slices are equal
-func AssertSliceEqual(t T, got, want []string, name string) {
+// AssertSliceEqual checks if two string slices are equal.
+// The name parameter can be a simple string or a format string with args.
+func AssertSliceEqual(t T, got, want []string, name string, args ...any) {
 	t.Helper()
 	if !core.SliceEqual(got, want) {
-		t.Errorf("%s = %v, want %v", name, got, want)
+		label := name
+		if len(args) > 0 {
+			label = fmt.Sprintf(name, args...)
+		}
+		t.Errorf("%s = %v, want %v", label, got, want)
 	}
 }
 
-// AssertSliceOfSlicesEqual checks if two [][]string are equal
-func AssertSliceOfSlicesEqual(t T, got, want [][]string, name string) {
+// AssertSliceOfSlicesEqual checks if two [][]string are equal.
+// The name parameter can be a simple string or a format string with args.
+func AssertSliceOfSlicesEqual(t T, got, want [][]string, name string, args ...any) {
 	t.Helper()
+	label := name
+	if len(args) > 0 {
+		label = fmt.Sprintf(name, args...)
+	}
 	if len(got) != len(want) {
-		t.Errorf("%s: got %d groups, want %d groups", name, len(got), len(want))
+		t.Errorf("%s: got %d groups, want %d groups", label, len(got), len(want))
 		return
 	}
 	for i := range got {
 		if !core.SliceEqual(got[i], want[i]) {
-			t.Errorf("%s[%d] = %v, want %v", name, i, got[i], want[i])
+			t.Errorf("%s[%d] = %v, want %v", label, i, got[i], want[i])
 		}
 	}
 }
 
-// AssertEqual checks if two values are equal
-func AssertEqual[V comparable](t T, got, want V, name string) {
+// AssertEqual checks if two values are equal.
+// The name parameter can be a simple string or a format string with args.
+func AssertEqual[V comparable](t T, got, want V, name string, args ...any) {
 	t.Helper()
 	if got != want {
-		t.Errorf("%s = %v, want %v", name, got, want)
+		label := name
+		if len(args) > 0 {
+			label = fmt.Sprintf(name, args...)
+		}
+		t.Errorf("%s = %v, want %v", label, got, want)
 	}
 }

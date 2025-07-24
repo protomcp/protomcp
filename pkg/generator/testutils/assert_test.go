@@ -181,6 +181,18 @@ func TestAssertSliceEqual(t *testing.T) {
 			}
 		})
 	}
+
+	// Test format string support
+	t.Run("format string", func(t *testing.T) {
+		mt := &mockT{}
+		testutils.AssertSliceEqual(mt, []string{"a"}, []string{"b"}, "slice for %s", "test")
+		if len(mt.errors) == 0 {
+			t.Error("expected error")
+		}
+		if !strings.Contains(mt.errors[0], "slice for test") {
+			t.Errorf("expected formatted name in error, got: %s", mt.errors[0])
+		}
+	})
 }
 
 func TestAssertSliceOfSlicesEqual(t *testing.T) {
@@ -241,53 +253,76 @@ func TestAssertSliceOfSlicesEqual(t *testing.T) {
 }
 
 func TestAssertEqual(t *testing.T) {
-	// Test with strings
-	t.Run("strings", func(t *testing.T) {
-		mt := &mockT{}
-		testutils.AssertEqual(mt, "hello", "hello", "greeting")
-		if len(mt.errors) > 0 {
-			t.Errorf("expected no errors for equal strings, got: %v", mt.errors)
-		}
+	t.Run("strings", testAssertEqualStrings)
+	t.Run("integers", testAssertEqualIntegers)
+	t.Run("booleans", testAssertEqualBooleans)
+	t.Run("format string", testAssertEqualFormatString)
+}
 
-		mt = &mockT{}
-		testutils.AssertEqual(mt, "hello", "world", "greeting")
-		if len(mt.errors) == 0 {
-			t.Error("expected error for different strings")
-		}
-		if !strings.Contains(mt.errors[0], "greeting") {
-			t.Errorf("error should mention field name 'greeting', got: %s", mt.errors[0])
-		}
-	})
+func testAssertEqualStrings(t *testing.T) {
+	mt := &mockT{}
+	testutils.AssertEqual(mt, "hello", "hello", "greeting")
+	if len(mt.errors) > 0 {
+		t.Errorf("expected no errors for equal strings, got: %v", mt.errors)
+	}
 
-	// Test with integers
-	t.Run("integers", func(t *testing.T) {
-		mt := &mockT{}
-		testutils.AssertEqual(mt, 42, 42, "answer")
-		if len(mt.errors) > 0 {
-			t.Errorf("expected no errors for equal integers, got: %v", mt.errors)
-		}
+	mt = &mockT{}
+	testutils.AssertEqual(mt, "hello", "world", "greeting")
+	if len(mt.errors) == 0 {
+		t.Error("expected error for different strings")
+	}
+	if !strings.Contains(mt.errors[0], "greeting") {
+		t.Errorf("error should mention field name 'greeting', got: %s", mt.errors[0])
+	}
+}
 
-		mt = &mockT{}
-		testutils.AssertEqual(mt, 42, 24, "answer")
-		if len(mt.errors) == 0 {
-			t.Error("expected error for different integers")
-		}
-	})
+func testAssertEqualIntegers(t *testing.T) {
+	mt := &mockT{}
+	testutils.AssertEqual(mt, 42, 42, "answer")
+	if len(mt.errors) > 0 {
+		t.Errorf("expected no errors for equal integers, got: %v", mt.errors)
+	}
 
-	// Test with booleans
-	t.Run("booleans", func(t *testing.T) {
-		mt := &mockT{}
-		testutils.AssertEqual(mt, true, true, "flag")
-		if len(mt.errors) > 0 {
-			t.Errorf("expected no errors for equal booleans, got: %v", mt.errors)
-		}
+	mt = &mockT{}
+	testutils.AssertEqual(mt, 42, 24, "answer")
+	if len(mt.errors) == 0 {
+		t.Error("expected error for different integers")
+	}
+}
 
-		mt = &mockT{}
-		testutils.AssertEqual(mt, true, false, "flag")
-		if len(mt.errors) == 0 {
-			t.Error("expected error for different booleans")
-		}
-	})
+func testAssertEqualBooleans(t *testing.T) {
+	mt := &mockT{}
+	testutils.AssertEqual(mt, true, true, "flag")
+	if len(mt.errors) > 0 {
+		t.Errorf("expected no errors for equal booleans, got: %v", mt.errors)
+	}
+
+	mt = &mockT{}
+	testutils.AssertEqual(mt, true, false, "flag")
+	if len(mt.errors) == 0 {
+		t.Error("expected error for different booleans")
+	}
+}
+
+func testAssertEqualFormatString(t *testing.T) {
+	mt := &mockT{}
+	testutils.AssertEqual(mt, "foo", "bar", "field[%d]", 42)
+	if len(mt.errors) == 0 {
+		t.Error("expected error")
+	}
+	if !strings.Contains(mt.errors[0], "field[42]") {
+		t.Errorf("expected formatted name in error, got: %s", mt.errors[0])
+	}
+
+	// Test multiple format args
+	mt = &mockT{}
+	testutils.AssertEqual(mt, 1, 2, "%s.%s", "obj", "prop")
+	if len(mt.errors) == 0 {
+		t.Error("expected error")
+	}
+	if !strings.Contains(mt.errors[0], "obj.prop") {
+		t.Errorf("expected formatted name in error, got: %s", mt.errors[0])
+	}
 }
 
 func TestMockTBehaviour(t *testing.T) {
