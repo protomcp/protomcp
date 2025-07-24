@@ -5,7 +5,64 @@ package v1
 
 import (
 	"context"
+	"errors"
 )
+
+// Enum type
+type StatusEnum int32
+
+const (
+	StatusEnum_STATUS_UNSPECIFIED StatusEnum = 0
+	StatusEnum_STATUS_ACTIVE      StatusEnum = 1
+	StatusEnum_STATUS_INACTIVE    StatusEnum = 2
+	StatusEnum_STATUS_SUSPENDED   StatusEnum = 3
+)
+
+var statusEnum_name = map[int32]string{
+	0: "STATUS_UNSPECIFIED",
+	1: "STATUS_ACTIVE",
+	2: "STATUS_INACTIVE",
+	3: "STATUS_SUSPENDED",
+}
+
+var statusEnum_value = map[string]int32{
+	"STATUS_UNSPECIFIED": 0,
+	"STATUS_ACTIVE":      1,
+	"STATUS_INACTIVE":    2,
+	"STATUS_SUSPENDED":   3,
+}
+
+// String returns the string representation of the StatusEnum
+func (x StatusEnum) String() string {
+	if s, ok := statusEnum_name[int32(x)]; ok {
+		return s
+	}
+	return ""
+}
+
+// IsValid returns true if the StatusEnum is a known value
+func (x StatusEnum) IsValid() bool {
+	_, ok := statusEnum_name[int32(x)]
+	return ok
+}
+
+// MarshalText implements encoding.TextMarshaler
+func (x StatusEnum) MarshalText() ([]byte, error) {
+	s := x.String()
+	if s == "" {
+		return nil, errors.New("invalid enum value")
+	}
+	return []byte(s), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler
+func (x *StatusEnum) UnmarshalText(text []byte) error {
+	if v, ok := statusEnum_value[string(text)]; ok {
+		*x = StatusEnum(v)
+		return nil
+	}
+	return errors.New("invalid enum value")
+}
 
 // IAddRequest is the interface for AddRequest
 // AddRequest is the request message for Add method

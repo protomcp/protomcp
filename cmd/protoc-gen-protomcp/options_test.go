@@ -3,122 +3,398 @@ package main
 import (
 	"testing"
 
-	"google.golang.org/protobuf/compiler/protogen"
+	"google.golang.org/protobuf/types/descriptorpb"
 
+	gengo "protomcp.org/protomcp/pkg/generator/gen-go"
 	"protomcp.org/protomcp/pkg/generator/testutils"
 )
 
-func TestGetInterfacePattern(t *testing.T) {
-	testNilOptionsReturnsDefault := func(t *testing.T) {
-		var opts *GeneratorOptions
-		got := opts.GetInterfacePattern()
-		testutils.AssertEqual(t, got, DefaultInterfacePattern, "GetInterfacePattern()")
-	}
-
-	testEmptyPatternReturnsDefault := func(t *testing.T) {
-		opts := &GeneratorOptions{InterfacePattern: ""}
-		got := opts.GetInterfacePattern()
-		testutils.AssertEqual(t, got, DefaultInterfacePattern, "GetInterfacePattern()")
-	}
-
-	testCustomPattern := func(t *testing.T) {
-		opts := &GeneratorOptions{InterfacePattern: "%Interface"}
-		got := opts.GetInterfacePattern()
-		testutils.AssertEqual(t, got, "%Interface", "GetInterfacePattern()")
-	}
-
-	t.Run("nil options returns default", testNilOptionsReturnsDefault)
-	t.Run("empty pattern returns default", testEmptyPatternReturnsDefault)
-	t.Run("custom pattern", testCustomPattern)
+// needsNoImplTestCase represents a test case for NeedsNoImpl
+type needsNoImplTestCase struct {
+	setupFile  func() *descriptorpb.FileDescriptorProto
+	opts       *GeneratorOptions
+	name       string
+	wantNoImpl bool
 }
 
-func TestGettersWithNilOptions(t *testing.T) {
-	testGetGenerateInterfaces := func(t *testing.T) {
-		var opts *GeneratorOptions
-		got := opts.GetGenerateInterfaces()
-		testutils.AssertEqual(t, got, DefaultGenerateInterfaces, "GetGenerateInterfaces() with nil")
-	}
+// test runs the NeedsNoImpl test case
+func (tc needsNoImplTestCase) test(t *testing.T) {
+	t.Helper()
 
-	testGetGenerateServices := func(t *testing.T) {
-		var opts *GeneratorOptions
-		got := opts.GetGenerateServices()
-		testutils.AssertEqual(t, got, DefaultGenerateServices, "GetGenerateServices() with nil")
+	// Create plugin from proto file
+	plugin, err := testutils.NewPlugin(t, tc.setupFile())
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
 	}
+	file := plugin.Files[0]
 
-	testGetGenerateNoImpl := func(t *testing.T) {
-		var opts *GeneratorOptions
-		got := opts.GetGenerateNoImpl()
-		testutils.AssertEqual(t, got, DefaultGenerateNoImpl, "GetGenerateNoImpl() with nil")
+	// Test NeedsNoImpl
+	got := tc.opts.NeedsNoImpl(file)
+	if got != tc.wantNoImpl {
+		t.Errorf("NeedsNoImpl() = %v, want %v", got, tc.wantNoImpl)
 	}
-
-	t.Run("GetGenerateInterfaces", testGetGenerateInterfaces)
-	t.Run("GetGenerateServices", testGetGenerateServices)
-	t.Run("GetGenerateNoImpl", testGetGenerateNoImpl)
 }
 
-func TestHasMethodsWithNilFile(t *testing.T) {
-	testHasMessagesWithNilFile := func(t *testing.T) {
-		opts := &GeneratorOptions{}
-		got := opts.HasMessages(nil)
-		testutils.AssertEqual(t, got, false, "HasMessages(nil)")
+func TestGeneratorOptions_NeedsNoImpl(t *testing.T) {
+	tests := []needsNoImplTestCase{
+		{
+			name: "nil options with messages uses defaults",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				return file
+			},
+			opts:       nil,
+			wantNoImpl: true,
+		},
+		{
+			name: "noImpl disabled returns false",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     false,
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+			},
+			wantNoImpl: false,
+		},
+		{
+			name: "noImpl enabled with messages",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+			},
+			wantNoImpl: true,
+		},
+		{
+			name: "noImpl enabled with services",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				// Add required message types for the service
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("GetItemRequest",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+					testutils.NewMessage("GetItemResponse",
+						testutils.NewField("item", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				file.Service = []*descriptorpb.ServiceDescriptorProto{
+					testutils.NewService("TestService",
+						testutils.NewMethod("GetItem", "GetItemRequest", "GetItemResponse"),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+			},
+			wantNoImpl: true,
+		},
+		{
+			name: "noImpl enabled with both messages and services",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+					testutils.NewMessage("GetItemRequest",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+					testutils.NewMessage("GetItemResponse",
+						testutils.NewField("item", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				file.Service = []*descriptorpb.ServiceDescriptorProto{
+					testutils.NewService("TestService",
+						testutils.NewMethod("GetItem", "GetItemRequest", "GetItemResponse"),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+			},
+			wantNoImpl: true,
+		},
+		{
+			name: "noImpl enabled but no messages or services",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				return testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+			},
+			wantNoImpl: false,
+		},
+		{
+			name: "noImpl enabled with only enums",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.EnumType = []*descriptorpb.EnumDescriptorProto{
+					testutils.NewEnum("Status",
+						testutils.NewEnumValue("STATUS_UNSPECIFIED", 0),
+						testutils.NewEnumValue("STATUS_ACTIVE", 1),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: true,
+				GenerateServices:   true,
+				GenerateEnums:      true,
+			},
+			wantNoImpl: false,
+		},
+		{
+			name: "noImpl enabled but interfaces disabled",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: false,
+				GenerateServices:   true,
+			},
+			wantNoImpl: false,
+		},
+		{
+			name: "noImpl enabled with messages and interfaces but services disabled",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				// Add required message types for the service
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("GetItemRequest",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+					testutils.NewMessage("GetItemResponse",
+						testutils.NewField("item", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				file.Service = []*descriptorpb.ServiceDescriptorProto{
+					testutils.NewService("TestService",
+						testutils.NewMethod("GetItem", "GetItemRequest", "GetItemResponse"),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateNoImpl:     true,
+				GenerateInterfaces: true,
+				GenerateServices:   false,
+			},
+			wantNoImpl: true,
+		},
 	}
 
-	testHasServicesWithNilFile := func(t *testing.T) {
-		opts := &GeneratorOptions{}
-		got := opts.HasServices(nil)
-		testutils.AssertEqual(t, got, false, "HasServices(nil)")
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
 	}
-
-	t.Run("HasMessages with nil file", testHasMessagesWithNilFile)
-	t.Run("HasServices with nil file", testHasServicesWithNilFile)
 }
 
-func TestNeedsMethodsCoverage(t *testing.T) {
-	testNeedsTypesWithOnlyMessages := func(t *testing.T) {
-		opts := &GeneratorOptions{
-			GenerateInterfaces: true,
-			GenerateServices:   false,
-		}
+// needsEnumsTestCase represents a test case for NeedsEnums
+type needsEnumsTestCase struct {
+	setupFile func() *descriptorpb.FileDescriptorProto
+	opts      *GeneratorOptions
+	name      string
+	wantEnums bool
+}
 
-		file := &protogen.File{
-			Messages: []*protogen.Message{{}}, // One message
-			Services: []*protogen.Service{},   // No services
-		}
+// test runs the NeedsEnums test case
+func (tc needsEnumsTestCase) test(t *testing.T) {
+	t.Helper()
 
-		got := opts.NeedsTypes(file)
-		testutils.AssertEqual(t, got, true, "NeedsTypes with only messages")
+	// Create plugin from proto file
+	plugin, err := testutils.NewPlugin(t, tc.setupFile())
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+	file := plugin.Files[0]
+
+	// Test NeedsEnums
+	got := tc.opts.NeedsEnums(file)
+	if got != tc.wantEnums {
+		t.Errorf("NeedsEnums() = %v, want %v", got, tc.wantEnums)
+	}
+}
+
+func TestGeneratorOptions_NeedsEnums(t *testing.T) {
+	tests := []needsEnumsTestCase{
+		{
+			name: "nil options uses defaults",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.EnumType = []*descriptorpb.EnumDescriptorProto{
+					testutils.NewEnum("Status",
+						testutils.NewEnumValue("STATUS_UNSPECIFIED", 0),
+						testutils.NewEnumValue("STATUS_ACTIVE", 1),
+					),
+				}
+				return file
+			},
+			opts:      nil,
+			wantEnums: true, // Default is now true
+		},
+		{
+			name: "enums disabled returns false",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.EnumType = []*descriptorpb.EnumDescriptorProto{
+					testutils.NewEnum("Status",
+						testutils.NewEnumValue("STATUS_UNSPECIFIED", 0),
+						testutils.NewEnumValue("STATUS_ACTIVE", 1),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateEnums: false,
+			},
+			wantEnums: false,
+		},
+		{
+			name: "enums enabled with enums",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.EnumType = []*descriptorpb.EnumDescriptorProto{
+					testutils.NewEnum("Status",
+						testutils.NewEnumValue("STATUS_UNSPECIFIED", 0),
+						testutils.NewEnumValue("STATUS_ACTIVE", 1),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateEnums: true,
+			},
+			wantEnums: true,
+		},
+		{
+			name: "enums enabled but no enums in file",
+			setupFile: func() *descriptorpb.FileDescriptorProto {
+				file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+				file.MessageType = []*descriptorpb.DescriptorProto{
+					testutils.NewMessage("TestMessage",
+						testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+					),
+				}
+				return file
+			},
+			opts: &GeneratorOptions{
+				GenerateEnums: true,
+			},
+			wantEnums: false,
+		},
 	}
 
-	testNeedsTypesWithOnlyServices := func(t *testing.T) {
-		opts := &GeneratorOptions{
-			GenerateInterfaces: false,
-			GenerateServices:   true,
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
+}
 
-		file := &protogen.File{
-			Messages: []*protogen.Message{},   // No messages
-			Services: []*protogen.Service{{}}, // One service
-		}
+// enumPatternTestCase represents a test case for enum pattern naming
+type enumPatternTestCase struct {
+	name     string
+	enumName string
+	pattern  string
+	wantName string
+}
 
-		got := opts.NeedsTypes(file)
-		testutils.AssertEqual(t, got, true, "NeedsTypes with only services")
+// test runs the enum pattern test case
+func (tc enumPatternTestCase) test(t *testing.T) {
+	t.Helper()
+
+	// Create a mock enum
+	file := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+	file.EnumType = []*descriptorpb.EnumDescriptorProto{
+		testutils.NewEnum(tc.enumName,
+			testutils.NewEnumValue(tc.enumName+"_UNSPECIFIED", 0),
+		),
 	}
 
-	testNeedsNoImplWithFalseGenerateNoImpl := func(t *testing.T) {
-		opts := &GeneratorOptions{
-			GenerateInterfaces: true,
-			GenerateNoImpl:     false,
-		}
+	plugin, err := testutils.NewPlugin(t, file)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+	enum := plugin.Files[0].Enums[0]
 
-		file := &protogen.File{
-			Messages: []*protogen.Message{{}}, // Has content
-		}
+	// Apply pattern
+	got := gengo.EnumNameFor(enum, tc.pattern)
+	if got != tc.wantName {
+		t.Errorf("EnumNameFor(%q, %q) = %q, want %q", tc.enumName, tc.pattern, got, tc.wantName)
+	}
+}
 
-		got := opts.NeedsNoImpl(file)
-		testutils.AssertEqual(t, got, false, "NeedsNoImpl with GenerateNoImpl=false")
+func TestEnumNamePattern(t *testing.T) {
+	tests := []enumPatternTestCase{
+		{
+			name:     "default pattern with Status",
+			enumName: "Status",
+			pattern:  "%Enum",
+			wantName: "StatusEnum",
+		},
+		{
+			name:     "prefix pattern",
+			enumName: "Status",
+			pattern:  "E%",
+			wantName: "EStatus",
+		},
+		{
+			name:     "no pattern",
+			enumName: "Status",
+			pattern:  "%",
+			wantName: "Status",
+		},
+		{
+			name:     "empty pattern defaults to no change",
+			enumName: "Status",
+			pattern:  "",
+			wantName: "Status",
+		},
+		{
+			name:     "complex pattern",
+			enumName: "FileType",
+			pattern:  "My%Enum",
+			wantName: "MyFileTypeEnum",
+		},
 	}
 
-	t.Run("NeedsTypes with only messages", testNeedsTypesWithOnlyMessages)
-	t.Run("NeedsTypes with only services", testNeedsTypesWithOnlyServices)
-	t.Run("NeedsNoImpl with false GenerateNoImpl", testNeedsNoImplWithFalseGenerateNoImpl)
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
 }

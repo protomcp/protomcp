@@ -1,0 +1,59 @@
+{{define "enum.tmpl"}}
+{{- if .Comment}}
+// {{.Comment}}
+{{- end}}
+type {{.Name}} int32
+
+const (
+{{- range .Values}}
+{{- if .Comment}}
+	// {{.Comment}}
+{{- end}}
+	{{.Name}} {{$.Name}} = {{.Number}}
+{{- end}}
+)
+
+var {{.NamePrivate}}_name = map[int32]string{
+{{- range .Values}}
+	{{.Number}}: "{{.UnprefixedName}}",
+{{- end}}
+}
+
+var {{.NamePrivate}}_value = map[string]int32{
+{{- range .Values}}
+	"{{.UnprefixedName}}": {{.Number}},
+{{- end}}
+}
+
+// String returns the string representation of the {{.Name}}
+func (x {{.Name}}) String() string {
+	if s, ok := {{.NamePrivate}}_name[int32(x)]; ok {
+		return s
+	}
+	return ""
+}
+
+// IsValid returns true if the {{.Name}} is a known value
+func (x {{.Name}}) IsValid() bool {
+	_, ok := {{.NamePrivate}}_name[int32(x)]
+	return ok
+}
+
+// MarshalText implements encoding.TextMarshaler
+func (x {{.Name}}) MarshalText() ([]byte, error) {
+	s := x.String()
+	if s == "" {
+		return nil, errors.New("invalid enum value")
+	}
+	return []byte(s), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler
+func (x *{{.Name}}) UnmarshalText(text []byte) error {
+	if v, ok := {{.NamePrivate}}_value[string(text)]; ok {
+		*x = {{.Name}}(v)
+		return nil
+	}
+	return errors.New("invalid enum value")
+}
+{{end}}
