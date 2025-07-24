@@ -84,6 +84,17 @@ func NewPlugin(t *testing.T, protoFile *descriptorpb.FileDescriptorProto) (*prot
 	return plugin, nil
 }
 
+// NewEnumField creates a FieldDescriptorProto for an enum field
+func NewEnumField(name string, number int32, typeName string) *descriptorpb.FieldDescriptorProto {
+	return &descriptorpb.FieldDescriptorProto{
+		Name:     proto.String(name),
+		Number:   proto.Int32(number),
+		Type:     descriptorpb.FieldDescriptorProto_TYPE_ENUM.Enum(),
+		TypeName: proto.String(typeName),
+		Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
+	}
+}
+
 // NewEnum creates an EnumDescriptorProto with the given name and values
 func NewEnum(name string, values ...*descriptorpb.EnumValueDescriptorProto) *descriptorpb.EnumDescriptorProto {
 	return &descriptorpb.EnumDescriptorProto{

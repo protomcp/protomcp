@@ -164,6 +164,55 @@ func TestNewEnumValue(t *testing.T) {
 	}
 }
 
+// newEnumFieldTestCase represents a test case for NewEnumField
+type newEnumFieldTestCase struct {
+	name     string
+	field    string
+	typeName string
+	number   int32
+}
+
+// test runs the NewEnumField test case
+func (tc newEnumFieldTestCase) test(t *testing.T) {
+	t.Helper()
+
+	field := testutils.NewEnumField(tc.field, tc.number, tc.typeName)
+
+	// Verify field properties
+	testutils.AssertEqual(t, field.GetName(), tc.field, "field name")
+	testutils.AssertEqual(t, field.GetNumber(), tc.number, "field number")
+	testutils.AssertEqual(t, field.GetType(), descriptorpb.FieldDescriptorProto_TYPE_ENUM, "field type")
+	testutils.AssertEqual(t, field.GetTypeName(), tc.typeName, "type name")
+	testutils.AssertEqual(t, field.GetLabel(), descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL, "field label")
+}
+
+func TestNewEnumField(t *testing.T) {
+	tests := []newEnumFieldTestCase{
+		{
+			name:     "basic enum field",
+			field:    "status",
+			number:   1,
+			typeName: ".test.Status",
+		},
+		{
+			name:     "enum field with package",
+			field:    "priority",
+			number:   2,
+			typeName: ".example.Priority",
+		},
+		{
+			name:     "enum field with nested type",
+			field:    "type",
+			number:   3,
+			typeName: ".test.Message.Type",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
+}
+
 func TestNewPlugin(t *testing.T) {
 	t.Run("success", testNewPluginSuccess)
 	t.Run("error with nil descriptor", testNewPluginErrorNilDescriptor)
