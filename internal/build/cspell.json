@@ -11,6 +11,8 @@
     "coverprofile",
     "darvaza",
     "descriptorpb",
+    "Errorf",
+    "Fatalf",
     "fieldalignment",
     "Fprintf",
     "golangci",
