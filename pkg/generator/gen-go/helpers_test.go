@@ -114,16 +114,16 @@ func TestInterfaceNameForService(t *testing.T) {
 			"CalculatorServiceInterface",
 		),
 		newServiceTestCase(
-			"Empty pattern defaults to I% with Service suffix",
+			"Empty pattern returns name with Service suffix",
 			"Calculator",
 			"",
-			"ICalculatorService",
+			"CalculatorService",
 		),
 		newServiceTestCase(
 			"Empty pattern with existing Service suffix",
 			"CalculatorService",
 			"",
-			"ICalculatorService",
+			"CalculatorService",
 		),
 		newServiceTestCase(
 			"Multiple Service suffixes",
@@ -202,10 +202,10 @@ func TestInterfaceNameForMessage(t *testing.T) {
 			"AddRequestInterface",
 		),
 		newMessageTestCase(
-			"Empty pattern defaults to I%",
+			"Empty pattern returns name unchanged",
 			"AddRequest",
 			"",
-			"IAddRequest",
+			"AddRequest",
 		),
 	}
 

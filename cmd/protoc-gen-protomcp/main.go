@@ -14,6 +14,10 @@ func main() {
 	pattern := flags.String("interface_pattern", DefaultInterfacePattern,
 		"pattern for interface names (e.g., 'I%' for prefix, '%Interface' for suffix)")
 	noImpl := flags.Bool("noimpl", DefaultGenerateNoImpl, "generate NoImpl structs for interfaces")
+	enums := flags.Bool("enums", DefaultGenerateEnums,
+		"generate enum helper methods (String, IsValid, encode/decode text)")
+	enumPattern := flags.String("enum_pattern", DefaultEnumPattern,
+		"pattern for enum type names (e.g., '%Enum' for suffix, 'E%' for prefix)")
 
 	protogen.Options{
 		ParamFunc: flags.Set,
@@ -21,12 +25,15 @@ func main() {
 		// Declare support for proto3 optional fields
 		plugin.SupportedFeatures = SupportedFeatures
 
-		return run(plugin, &GeneratorOptions{
+		opts := &GeneratorOptions{
 			GenerateInterfaces: *interfaces,
 			GenerateServices:   *services,
 			InterfacePattern:   *pattern,
 			GenerateNoImpl:     *noImpl,
-		})
+			GenerateEnums:      *enums,
+			EnumPattern:        *enumPattern,
+		}
+		return run(plugin, opts)
 	})
 }
 

@@ -19,6 +19,7 @@ const (
 	fieldTemplate         = "field.tmpl"
 	serviceTemplate       = "service.tmpl"
 	rpcTemplate           = "rpc.tmpl"
+	enumTemplate          = "enum.tmpl"
 	noImplFileTemplate    = "noImpl_file.tmpl"
 	noImplMessageTemplate = "noImpl_message.tmpl"
 	noImplServiceTemplate = "noImpl_service.tmpl"
@@ -31,6 +32,7 @@ type TemplateData struct {
 	ImportGroups [][]gengo.Import // Groups of imports, separated by blank lines
 	Messages     []MessageData
 	Services     []ServiceData
+	Enums        []EnumData
 	NoImpl       bool // Whether to generate NoImpl structs
 }
 
@@ -86,4 +88,24 @@ type MethodData struct {
 	Comment      string
 	RequestType  string
 	ResponseType string
+}
+
+// EnumData holds data for an enum
+type EnumData struct {
+	// Generated name with pattern applied (e.g., StatusEnum)
+	Name string
+	// Private name for variables (e.g., statusEnum)
+	NamePrivate string
+	Comment     string
+	Values      []EnumValueData
+}
+
+// EnumValueData holds data for an enum value
+type EnumValueData struct {
+	// Full constant name (e.g., StatusEnum_STATUS_PENDING)
+	Name string
+	// Unprefixed name for maps (e.g., STATUS_PENDING)
+	UnprefixedName string
+	Comment        string
+	Number         int32
 }

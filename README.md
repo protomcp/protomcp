@@ -33,11 +33,33 @@ message AddRequest {
     double a = 1;
     double b = 2;
 }
+
+enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_ACTIVE = 1;
+    STATUS_INACTIVE = 2;
+}
 ```
 
-ProtoMCP generates Go interfaces:
+ProtoMCP generates Go interfaces and enum helpers:
 
 ```go
+// Generated enum with %Enum pattern (avoids clash with .pb.go)
+type StatusEnum int32
+
+const (
+    StatusEnum_UNSPECIFIED StatusEnum = 0
+    StatusEnum_ACTIVE      StatusEnum = 1
+    StatusEnum_INACTIVE    StatusEnum = 2
+)
+
+// Helper methods for enum
+func (x StatusEnum) String() string         // Returns "UNSPECIFIED", etc.
+func (x StatusEnum) IsValid() bool          // Validates enum value
+func (x StatusEnum) MarshalText() ([]byte, error)
+func (x *StatusEnum) UnmarshalText(text []byte) error  // Decode from text
+
+// Generated interfaces
 type IAddRequest interface {
     GetA() float64
     SetA(v float64) error
@@ -45,7 +67,7 @@ type IAddRequest interface {
     SetB(v float64) error
 }
 
-type CalculatorService interface {
+type ICalculatorService interface {
     Add(ctx context.Context, req IAddRequest) (IAddResponse, error)
 }
 ```
@@ -57,8 +79,10 @@ type CalculatorService interface {
 - **Interface Generation**: Template-based generation of Go interfaces from
   protobuf messages.
 - **Service Interfaces**: Context-aware service method signatures.
+- **Enum Helpers**: Generate type-safe enum types with String(), IsValid(),
+  and text marshaling methods.
 - **Configurable Naming**: Support for custom interface naming patterns (e.g.,
-  `I%`, `%Interface`).
+  `I%`, `%Interface`) and enum patterns (e.g., `%Enum`, `E%`).
 - **Proto3 Support**: Full support for all field types including optional
   fields.
 - **Test Infrastructure**: Comprehensive test utilities and factory functions.
@@ -118,7 +142,8 @@ protobuf definitions:
 - ✅ Template-based code generator (`protoc-gen-protomcp`)
 - ✅ Interface generation for messages with getters/setters
 - ✅ Service interface generation with context support
-- ✅ Configurable interface naming patterns
+- ✅ Enum helper generation with validation and text marshaling
+- ✅ Configurable interface and enum naming patterns
 - ✅ Comprehensive test infrastructure
 
 **In Progress:**

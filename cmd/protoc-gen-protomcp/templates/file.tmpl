@@ -16,6 +16,9 @@ import (
 )
 {{end}}
 
+{{range .Enums}}
+{{template "enum.tmpl" .}}
+{{end}}
 {{range .Messages}}
 {{template "message.tmpl" .}}
 {{end}}

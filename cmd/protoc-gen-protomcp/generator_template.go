@@ -14,6 +14,10 @@ import (
 
 // generateTypesWithTemplate generates interface definitions using templates
 func (g *Generator) generateTypesWithTemplate(file *protogen.File, opts *GeneratorOptions) error {
+	if file == nil || g == nil {
+		return core.ErrInvalid
+	}
+
 	filename := file.GeneratedFilenamePrefix + ".types.go"
 	genFile := g.plugin.NewGeneratedFile(filename, file.GoImportPath)
 
@@ -21,13 +25,18 @@ func (g *Generator) generateTypesWithTemplate(file *protogen.File, opts *Generat
 	data := g.prepareTemplateData(file, opts)
 
 	// Process messages
-	if opts.GenerateInterfaces {
+	if opts.GetGenerateInterfaces() {
 		g.processMessages(genFile, file.Messages, opts, data)
 	}
 
 	// Process services
-	if opts.GenerateServices {
+	if opts.GetGenerateServices() {
 		g.processServices(genFile, file.Services, opts, data)
+	}
+
+	// Process enums
+	if opts.NeedsEnums(file) {
+		g.processEnums(genFile, file.Enums, opts, data)
 	}
 
 	// Render template
@@ -54,10 +63,10 @@ func (g *Generator) generateNoImplWithTemplate(file *protogen.File, opts *Genera
 	data := g.prepareNoImplTemplateData(file, opts)
 
 	// Process messages and services
-	if opts.GenerateInterfaces {
+	if opts.GetGenerateInterfaces() {
 		g.processMessages(genFile, file.Messages, opts, data)
 	}
-	if opts.GenerateServices {
+	if opts.GetGenerateServices() {
 		g.processServices(genFile, file.Services, opts, data)
 	}
 
@@ -83,6 +92,11 @@ func (*Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOption
 	if opts.NeedsServices(file) {
 		stdPaths = append(stdPaths, "context")
 	}
+
+	// Add errors import if we need enums (standard library)
+	if opts.NeedsEnums(file) {
+		stdPaths = append(stdPaths, "errors")
+	}
 	// Use GenerateImports to process and organize imports
 	importGroups := gengo.GenerateImports(stdPaths, thirdPartyPaths)
 
@@ -92,7 +106,8 @@ func (*Generator) prepareTemplateData(file *protogen.File, opts *GeneratorOption
 		ImportGroups: importGroups,
 		Messages:     make([]MessageData, 0, len(file.Messages)),
 		Services:     make([]ServiceData, 0, len(file.Services)),
-		NoImpl:       opts.GenerateNoImpl,
+		Enums:        make([]EnumData, 0, len(file.Enums)),
+		NoImpl:       opts.GetGenerateNoImpl(),
 	}
 }
 
@@ -124,6 +139,7 @@ func (*Generator) prepareNoImplTemplateData(file *protogen.File, opts *Generator
 		ImportGroups: importGroups,
 		Messages:     make([]MessageData, 0, len(file.Messages)),
 		Services:     make([]ServiceData, 0, len(file.Services)),
+		Enums:        make([]EnumData, 0, len(file.Enums)),
 		NoImpl:       true,
 	}
 }
@@ -154,7 +170,7 @@ func (*Generator) buildMessageData(gen *protogen.GeneratedFile, msg *protogen.Me
 	opts *GeneratorOptions) MessageData {
 	data := MessageData{
 		Name:          msg.GoIdent.GoName,
-		InterfaceName: gengo.InterfaceNameForMessage(msg, opts.InterfacePattern),
+		InterfaceName: gengo.InterfaceNameForMessage(msg, opts.GetInterfacePattern()),
 		NoImplName:    "NoImpl" + msg.GoIdent.GoName,
 		Comment:       strings.TrimSpace(string(msg.Comments.Leading)),
 		Fields:        make([]FieldData, 0, len(msg.Fields)),
@@ -181,7 +197,7 @@ func processRegularFields(gen *protogen.GeneratedFile, msg *protogen.Message,
 		fieldData := FieldData{
 			Name:      string(field.Desc.Name()),
 			GoName:    field.GoName,
-			Type:      gengo.GoTypeForFieldWithPattern(gen, field, opts.InterfacePattern),
+			Type:      gengo.GoTypeForFieldWithPattern(gen, field, opts.GetInterfacePattern()),
 			Comment:   strings.TrimSpace(string(field.Comments.Leading)),
 			Optional:  field.Desc.HasOptionalKeyword(),
 			IsOneOf:   false,
@@ -214,7 +230,7 @@ func processOneOfGroups(gen *protogen.GeneratedFile, msg *protogen.Message, opts
 			fieldData := OneOfFieldData{
 				Name:      string(field.Desc.Name()),
 				GoName:    field.GoName,
-				Type:      gengo.GoTypeForFieldWithPattern(gen, field, opts.InterfacePattern),
+				Type:      gengo.GoTypeForFieldWithPattern(gen, field, opts.GetInterfacePattern()),
 				OneOfName: string(oneof.Desc.Name()),
 			}
 			oneOfData.Fields = append(oneOfData.Fields, fieldData)
@@ -229,7 +245,7 @@ func (*Generator) buildServiceData(_ *protogen.GeneratedFile, svc *protogen.Serv
 	opts *GeneratorOptions) ServiceData {
 	data := ServiceData{
 		Name:          svc.GoName,
-		InterfaceName: gengo.InterfaceNameForService(svc, opts.InterfacePattern),
+		InterfaceName: gengo.InterfaceNameForService(svc, opts.GetInterfacePattern()),
 		NoImplName:    "NoImpl" + svc.GoName,
 		Comment:       strings.TrimSpace(string(svc.Comments.Leading)),
 		Methods:       make([]MethodData, 0, len(svc.Methods)),
@@ -239,10 +255,48 @@ func (*Generator) buildServiceData(_ *protogen.GeneratedFile, svc *protogen.Serv
 		methodData := MethodData{
 			Name:         method.GoName,
 			Comment:      strings.TrimSpace(string(method.Comments.Leading)),
-			RequestType:  gengo.InterfaceNameForMessage(method.Input, opts.InterfacePattern),
-			ResponseType: gengo.InterfaceNameForMessage(method.Output, opts.InterfacePattern),
+			RequestType:  gengo.InterfaceNameForMessage(method.Input, opts.GetInterfacePattern()),
+			ResponseType: gengo.InterfaceNameForMessage(method.Output, opts.GetInterfacePattern()),
 		}
 		data.Methods = append(data.Methods, methodData)
+	}
+
+	return data
+}
+
+// processEnums adds all enums to template data
+func (g *Generator) processEnums(gen *protogen.GeneratedFile, enums []*protogen.Enum,
+	opts *GeneratorOptions, data *TemplateData) {
+	for _, enum := range enums {
+		enumData := g.buildEnumData(gen, enum, opts)
+		data.Enums = append(data.Enums, enumData)
+	}
+}
+
+// buildEnumData builds template data for an enum
+func (*Generator) buildEnumData(_ *protogen.GeneratedFile, enum *protogen.Enum, opts *GeneratorOptions) EnumData {
+	enumName := gengo.EnumNameFor(enum, opts.GetEnumPattern())
+
+	data := EnumData{
+		Name:        enumName,
+		NamePrivate: strings.ToLower(enumName[:1]) + enumName[1:],
+		Comment:     strings.TrimSpace(string(enum.Comments.Leading)),
+		Values:      make([]EnumValueData, 0, len(enum.Values)),
+	}
+
+	originalPrefix := enum.GoIdent.GoName + "_"
+
+	for _, value := range enum.Values {
+		unprefixedName, _ := strings.CutPrefix(value.GoIdent.GoName, originalPrefix)
+		name := data.Name + "_" + unprefixedName
+
+		valueData := EnumValueData{
+			Name:           name,
+			UnprefixedName: unprefixedName,
+			Comment:        strings.TrimSpace(string(value.Comments.Leading)),
+			Number:         int32(value.Desc.Number()),
+		}
+		data.Values = append(data.Values, valueData)
 	}
 
 	return data

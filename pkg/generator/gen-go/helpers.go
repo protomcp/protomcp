@@ -109,7 +109,7 @@ func scalarGoType(kind protoreflect.Kind) string {
 
 // InterfaceNameForMessage returns the interface name for a message
 func InterfaceNameForMessage(msg *protogen.Message, pattern string) string {
-	return applyInterfacePattern(msg.GoIdent.GoName, pattern)
+	return ApplyNamePattern(msg.GoIdent.GoName, pattern)
 }
 
 // InterfaceNameForService returns the interface name for a service based on the pattern
@@ -121,15 +121,24 @@ func InterfaceNameForService(svc *protogen.Service, pattern string) string {
 		name = name + "Service"
 	}
 
-	return applyInterfacePattern(name, pattern)
+	return ApplyNamePattern(name, pattern)
 }
 
-// applyInterfacePattern applies the naming pattern to generate interface names
-func applyInterfacePattern(name, pattern string) string {
-	if pattern == "" {
-		pattern = "I%" // Default pattern
+// EnumNameFor returns the enum type name for an enum based on the pattern
+func EnumNameFor(enum *protogen.Enum, pattern string) string {
+	return ApplyNamePattern(enum.GoIdent.GoName, pattern)
+}
+
+// ApplyNamePattern applies a naming pattern to generate names
+// The pattern should contain a single '%' which will be replaced with the name
+// If pattern is empty, it defaults to "%" which returns the name unchanged
+func ApplyNamePattern(name, pattern string) string {
+	switch pattern {
+	case "", "%":
+		return name
+	default:
+		return strings.ReplaceAll(pattern, "%", name)
 	}
-	return strings.ReplaceAll(pattern, "%", name)
 }
 
 // Import represents an import statement
