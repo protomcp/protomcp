@@ -140,26 +140,26 @@ func TestAssertSliceEqual(t *testing.T) {
 	}{
 		{
 			name:      "equal slices",
-			got:       []string{"a", "b", "c"},
-			want:      []string{"a", "b", "c"},
+			got:       testutils.S("a", "b", "c"),
+			want:      testutils.S("a", "b", "c"),
 			wantError: false,
 		},
 		{
 			name:      "different slices",
-			got:       []string{"a", "b"},
-			want:      []string{"a", "b", "c"},
+			got:       testutils.S("a", "b"),
+			want:      testutils.S("a", "b", "c"),
 			wantError: true,
 		},
 		{
 			name:      "empty slices",
-			got:       []string{},
-			want:      []string{},
+			got:       testutils.S[string](),
+			want:      testutils.S[string](),
 			wantError: false,
 		},
 		{
 			name:      "nil vs empty",
 			got:       nil,
-			want:      []string{},
+			want:      testutils.S[string](),
 			wantError: false, // core.SliceEqual treats nil and empty as equal
 		},
 	}
@@ -185,7 +185,7 @@ func TestAssertSliceEqual(t *testing.T) {
 	// Test format string support
 	t.Run("format string", func(t *testing.T) {
 		mt := &mockT{}
-		testutils.AssertSliceEqual(mt, []string{"a"}, []string{"b"}, "slice for %s", "test")
+		testutils.AssertSliceEqual(mt, testutils.S("a"), testutils.S("b"), "slice for %s", "test")
 		if len(mt.errors) == 0 {
 			t.Error("expected error")
 		}
@@ -204,26 +204,26 @@ func TestAssertSliceOfSlicesEqual(t *testing.T) {
 	}{
 		{
 			name:      "equal nested slices",
-			got:       [][]string{{"a", "b"}, {"c", "d"}},
-			want:      [][]string{{"a", "b"}, {"c", "d"}},
+			got:       testutils.S(testutils.S("a", "b"), testutils.S("c", "d")),
+			want:      testutils.S(testutils.S("a", "b"), testutils.S("c", "d")),
 			wantError: false,
 		},
 		{
 			name:      "different length",
-			got:       [][]string{{"a", "b"}},
-			want:      [][]string{{"a", "b"}, {"c", "d"}},
+			got:       testutils.S(testutils.S("a", "b")),
+			want:      testutils.S(testutils.S("a", "b"), testutils.S("c", "d")),
 			wantError: true,
 		},
 		{
 			name:      "different content",
-			got:       [][]string{{"a", "b"}, {"c", "d"}},
-			want:      [][]string{{"a", "b"}, {"e", "f"}},
+			got:       testutils.S(testutils.S("a", "b"), testutils.S("c", "d")),
+			want:      testutils.S(testutils.S("a", "b"), testutils.S("e", "f")),
 			wantError: true,
 		},
 		{
 			name:      "empty slices",
-			got:       [][]string{},
-			want:      [][]string{},
+			got:       testutils.S[[]string](),
+			want:      testutils.S[[]string](),
 			wantError: false,
 		},
 	}

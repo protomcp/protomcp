@@ -17,6 +17,12 @@
 //   - NewEnum: Creates enum types with values
 //   - NewCodeGenRequest: Creates code generator requests
 //
+// # Helper Functions
+//
+// General purpose helpers for test code:
+//
+//   - S: Generic slice constructor for concise test data (e.g., S("a", "b", "c"))
+//
 // # Assertion Helpers
 //
 // Common assertion functions for testing generated code:
