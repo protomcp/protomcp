@@ -164,6 +164,55 @@ func TestNewEnumValue(t *testing.T) {
 	}
 }
 
+// newEnumFieldTestCase represents a test case for NewEnumField
+type newEnumFieldTestCase struct {
+	name     string
+	field    string
+	typeName string
+	number   int32
+}
+
+// test runs the NewEnumField test case
+func (tc newEnumFieldTestCase) test(t *testing.T) {
+	t.Helper()
+
+	field := testutils.NewEnumField(tc.field, tc.number, tc.typeName)
+
+	// Verify field properties
+	testutils.AssertEqual(t, field.GetName(), tc.field, "field name")
+	testutils.AssertEqual(t, field.GetNumber(), tc.number, "field number")
+	testutils.AssertEqual(t, field.GetType(), descriptorpb.FieldDescriptorProto_TYPE_ENUM, "field type")
+	testutils.AssertEqual(t, field.GetTypeName(), tc.typeName, "type name")
+	testutils.AssertEqual(t, field.GetLabel(), descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL, "field label")
+}
+
+func TestNewEnumField(t *testing.T) {
+	tests := []newEnumFieldTestCase{
+		{
+			name:     "basic enum field",
+			field:    "status",
+			number:   1,
+			typeName: ".test.Status",
+		},
+		{
+			name:     "enum field with package",
+			field:    "priority",
+			number:   2,
+			typeName: ".example.Priority",
+		},
+		{
+			name:     "enum field with nested type",
+			field:    "type",
+			number:   3,
+			typeName: ".test.Message.Type",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
+}
+
 func TestNewPlugin(t *testing.T) {
 	t.Run("success", testNewPluginSuccess)
 	t.Run("error with nil descriptor", testNewPluginErrorNilDescriptor)
@@ -247,6 +296,128 @@ func TestRunGenerator(t *testing.T) {
 	}
 	if response.File[0].GetName() != "test.pb.go" {
 		t.Errorf("generated file name = %q, want %q", response.File[0].GetName(), "test.pb.go")
+	}
+}
+
+// getGeneratedFileContentTestCase represents a test case for GetGeneratedFileContent
+type getGeneratedFileContentTestCase struct {
+	setupPlugin func(t *testing.T) *protogen.Plugin
+	name        string
+	filename    string
+	expectFound bool
+}
+
+// test runs the GetGeneratedFileContent test case
+func (tc getGeneratedFileContentTestCase) test(t *testing.T) {
+	t.Helper()
+
+	plugin := tc.setupPlugin(t)
+
+	content, ok := testutils.GetGeneratedFileContent(t, plugin, tc.filename)
+	testutils.AssertEqual(t, ok, tc.expectFound, "file found")
+
+	if tc.expectFound && tc.filename == "test.go" {
+		expectedContent := "package test\n\n// Generated content\n"
+		testutils.AssertEqual(t, content, expectedContent, "file content")
+	}
+}
+
+// setupPluginWithGeneratedFile creates a plugin with a single generated file "test.go"
+// containing basic package declaration and a comment.
+func setupPluginWithGeneratedFile(t *testing.T) *protogen.Plugin {
+	protoFile := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+	protoFile.MessageType = []*descriptorpb.DescriptorProto{
+		testutils.NewMessage("TestMessage",
+			testutils.NewField("id", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING),
+		),
+	}
+
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+
+	// Simulate generating a file
+	genFile := plugin.NewGeneratedFile("test.go", protogen.GoImportPath(protoFile.GetOptions().GetGoPackage()))
+	genFile.P("package test")
+	genFile.P("")
+	genFile.P("// Generated content")
+
+	return plugin
+}
+
+// newGeneratedFileContentTestCase creates a new test case for GetGeneratedFileContent
+func newGeneratedFileContentTestCase(
+	name, filename string, expectFound bool,
+	setupPlugin func(t *testing.T) *protogen.Plugin,
+) getGeneratedFileContentTestCase {
+	return getGeneratedFileContentTestCase{
+		setupPlugin: setupPlugin,
+		name:        name,
+		filename:    filename,
+		expectFound: expectFound,
+	}
+}
+
+func TestGetGeneratedFileContent(t *testing.T) {
+	setupPlugin := setupPluginWithGeneratedFile
+	tests := []getGeneratedFileContentTestCase{
+		newGeneratedFileContentTestCase("existing file", "test.go", true, setupPlugin),
+		newGeneratedFileContentTestCase("non-existent file", "non-existent.go", false, setupPlugin),
+		newGeneratedFileContentTestCase("empty filename", "", false, setupPlugin),
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, tt.test)
+	}
+}
+
+// multipleFilesTestCase represents a test case for multiple file generation
+type multipleFilesTestCase struct {
+	name    string
+	content string
+}
+
+// test runs the multiple files test case
+func (tc multipleFilesTestCase) test(t *testing.T, plugin *protogen.Plugin) {
+	t.Helper()
+
+	content, ok := testutils.GetGeneratedFileContent(t, plugin, tc.name)
+	if !ok {
+		t.Fatalf("Expected to find file %s", tc.name)
+	}
+	expectedContent := tc.content + "\n"
+	testutils.AssertEqual(t, content, expectedContent, "file content")
+}
+
+func TestGetGeneratedFileContent_MultipleFiles(t *testing.T) {
+	// Create a proto file
+	protoFile := testutils.NewFileDescriptor("test.proto", "test", "github.com/example/test")
+
+	// Create plugin
+	plugin, err := testutils.NewPlugin(t, protoFile)
+	if err != nil {
+		t.Fatalf("failed to create plugin: %v", err)
+	}
+
+	// Define test cases
+	files := []multipleFilesTestCase{
+		{"file1.go", "package test\n\n// File 1"},
+		{"file2.go", "package test\n\n// File 2"},
+		{"file3.go", "package test\n\n// File 3"},
+	}
+
+	// Generate files
+	for _, f := range files {
+		genFile := plugin.NewGeneratedFile(f.name, protogen.GoImportPath(protoFile.GetOptions().GetGoPackage()))
+		genFile.P(f.content)
+	}
+
+	// Test retrieving each file
+	for _, f := range files {
+		t.Run(f.name, func(t *testing.T) {
+			f.test(t, plugin)
+		})
 	}
 }
 

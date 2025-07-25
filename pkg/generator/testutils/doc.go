@@ -17,6 +17,12 @@
 //   - NewEnum: Creates enum types with values
 //   - NewCodeGenRequest: Creates code generator requests
 //
+// # Helper Functions
+//
+// General purpose helpers for test code:
+//
+//   - S: Generic slice constructor for concise test data (e.g., S("a", "b", "c"))
+//
 // # Assertion Helpers
 //
 // Common assertion functions for testing generated code:
@@ -26,6 +32,14 @@
 //   - AssertEqual: Generic equality assertion with clear error messages
 //   - AssertSliceEqual: Compares string slices
 //   - AssertSliceOfSlicesEqual: Compares nested string slices
+//   - AssertTypeIs: Type assertion with automatic type inference
+//
+// The assertion functions that take a name parameter support format strings:
+//
+//	AssertEqual(t, got, want, "field")                    // Simple name
+//	AssertEqual(t, got, want, "item[%d]", index)         // Format string
+//	AssertSliceEqual(t, got, want, "config.%s", section) // With context
+//	result, ok := AssertTypeIs[*MyType](t, val, "response")  // Type assertion
 //
 // # Running Generators
 //

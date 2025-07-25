@@ -84,6 +84,17 @@ func NewPlugin(t *testing.T, protoFile *descriptorpb.FileDescriptorProto) (*prot
 	return plugin, nil
 }
 
+// NewEnumField creates a FieldDescriptorProto for an enum field
+func NewEnumField(name string, number int32, typeName string) *descriptorpb.FieldDescriptorProto {
+	return &descriptorpb.FieldDescriptorProto{
+		Name:     proto.String(name),
+		Number:   proto.Int32(number),
+		Type:     descriptorpb.FieldDescriptorProto_TYPE_ENUM.Enum(),
+		TypeName: proto.String(typeName),
+		Label:    descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL.Enum(),
+	}
+}
+
 // NewEnum creates an EnumDescriptorProto with the given name and values
 func NewEnum(name string, values ...*descriptorpb.EnumValueDescriptorProto) *descriptorpb.EnumDescriptorProto {
 	return &descriptorpb.EnumDescriptorProto{
@@ -119,4 +130,18 @@ func RunGenerator(
 	}
 
 	return plugin.Response()
+}
+
+// GetGeneratedFileContent returns the content of a generated file by name
+func GetGeneratedFileContent(t *testing.T, plugin *protogen.Plugin, filename string) (string, bool) {
+	t.Helper()
+
+	response := plugin.Response()
+	for _, file := range response.File {
+		if file.GetName() == filename {
+			return file.GetContent(), true
+		}
+	}
+
+	return "", false
 }
