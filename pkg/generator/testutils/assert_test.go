@@ -594,6 +594,57 @@ func testAssertNotNilFormatString(t *testing.T) {
 	}
 }
 
+type isNilCoverageTest struct {
+	value     any
+	name      string
+	wantError bool
+}
+
+func newIsNilCoverageTest(name string, value any, wantError bool) isNilCoverageTest {
+	return isNilCoverageTest{
+		name:      name,
+		value:     value,
+		wantError: wantError,
+	}
+}
+
+func (tc isNilCoverageTest) test(t *testing.T) {
+	mt := &mockT{}
+	testutils.AssertNil(mt, tc.value, "test value")
+
+	if tc.wantError && len(mt.errors) == 0 {
+		t.Error("expected error but got none")
+	}
+	if !tc.wantError && len(mt.errors) > 0 {
+		t.Errorf("unexpected error: %v", mt.errors)
+	}
+	if !mt.helperCalled {
+		t.Error("Helper() was not called")
+	}
+}
+
+func TestIsNilCoverage(t *testing.T) {
+	tests := testutils.S(
+		// Fast path pointer types
+		newIsNilCoverageTest("nil *int fast path", (*int)(nil), false),
+		newIsNilCoverageTest("nil *bool fast path", (*bool)(nil), false),
+		newIsNilCoverageTest("non-nil *int", func() *int { v := 42; return &v }(), true),
+		newIsNilCoverageTest("non-nil *bool", func() *bool { v := true; return &v }(), true),
+		// Reflection path types
+		newIsNilCoverageTest("nil slice", ([]string)(nil), false),
+		newIsNilCoverageTest("nil map", (map[string]int)(nil), false),
+		newIsNilCoverageTest("nil channel", (chan int)(nil), false),
+		newIsNilCoverageTest("nil function", (func())(nil), false),
+		newIsNilCoverageTest("nil interface", (any)(nil), false),
+		newIsNilCoverageTest("non-nil slice", []string{"test"}, true),
+		newIsNilCoverageTest("non-nil map", make(map[string]int), true),
+	)
+
+	for _, tc := range tests {
+		t.Run(tc.name, tc.test)
+	}
+}
+
 func TestAssertTrue(t *testing.T) {
 	t.Run("true condition", testAssertTrueSuccess)
 	t.Run("false condition", testAssertTrueFailed)
