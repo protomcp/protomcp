@@ -1,5 +1,5 @@
 .PHONY: all clean generate fmt tidy check-grammar check-spelling check-shell check-jq
-.PHONY: coverage codecov examples examples-lint
+.PHONY: coverage codecov examples examples-lint examples-build
 .PHONY: FORCE
 
 GO ?= go
@@ -184,7 +184,15 @@ check-jq: FORCE
 # Generate examples using buf
 examples: build ; $(info $(M) generating examples…)
 	$Q cd proto/examples && PATH="$(OUTDIR):$$PATH" $(BUF) generate
+	$Q if find ./proto/examples -name '*.go' -print0 | xargs -0 -r $(GOFMT) -l | grep -q .; then \
+		echo "Examples are not properly formatted. Run 'make examples' to fix."; \
+		exit 1; \
+	fi
 
 # Lint example proto files
 examples-lint: ; $(info $(M) linting example proto files…)
 	$Q cd proto/examples && $(BUF) lint
+
+# Build examples
+examples-build: examples ; $(info $(M) building examples…)
+	$Q $(GO) build -v ./proto/examples/...
