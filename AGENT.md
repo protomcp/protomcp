@@ -57,6 +57,12 @@ make up
 
 # Run go:generate directives
 make generate
+
+# Generate example code from proto files
+make examples
+
+# Lint example proto files
+make examples-lint
 ```
 
 ## Build System Features
@@ -79,10 +85,14 @@ The build system includes comprehensive tooling:
 
 - **golangci-lint**: Go code linting with version selection.
 - **revive**: Additional Go linting with custom rules.
+- **buf**: Protocol buffer linting and generation.
 - **markdownlint**: Markdown formatting and style checking.
 - **shellcheck**: Shell script analysis.
 - **cspell**: Spell checking for documentation and code.
 - **languagetool**: Grammar checking for Markdown files.
+
+All Go tools (golangci-lint, revive, buf) are managed via `go run` for
+consistent versioning without manual installation.
 
 #### Coverage and Testing
 
@@ -139,6 +149,31 @@ Tool configurations are stored in `internal/build/`:
 - **HTTP/2 & QUIC**: Modern transport protocols for performance
 - **JSON Schema**: Validation and type safety
 - **Protocol Buffers**: Service definition source of truth
+
+### Example Proto Files
+
+The `proto/examples/` directory contains example protobuf definitions for
+testing:
+
+- **Structure**: Follows buf's recommended layout (e.g., `calculator/v1/`)
+- **Configuration**:
+  - `buf.yaml`: Lint configuration using STANDARD rules
+  - `buf.gen.yaml`: Code generation configuration
+- **Usage**:
+
+  ```bash
+  # Generate Go code from examples
+  make examples
+
+  # Lint proto files
+  make examples-lint
+  ```
+
+The generated code demonstrates the protoc-gen-protomcp output with:
+
+- Interface definitions for messages
+- Service interfaces with context support
+- Configurable interface naming patterns
 
 ## Development Workflow
 

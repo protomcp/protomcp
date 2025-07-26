@@ -1,0 +1,22 @@
+{{define "message.tmpl"}}
+// {{.InterfaceName}} is the interface for {{.Name}}
+{{- if .Comment}}
+// {{.Comment}}
+{{- end}}
+type {{.InterfaceName}} interface {
+{{- range .Fields}}
+	{{template "field.tmpl" .}}
+{{- end}}
+
+{{- range .OneOfGroups}}
+	// Get{{.GoName}} returns the {{.Name}} `oneof` value
+	Get{{.GoName}}() is{{$.Name}}_{{.GoName}}
+{{- range .Fields}}
+	// Set{{.GoName}} sets the {{.Name}} field in the {{.OneOfName}} `oneof`
+	Set{{.GoName}}(v {{.Type}}) error
+{{- end}}
+{{- end}}
+}
+
+{{end}}
+
