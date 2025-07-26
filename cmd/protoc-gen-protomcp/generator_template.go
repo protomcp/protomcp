@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	"darvaza.org/core"
@@ -42,7 +41,7 @@ func (g *Generator) generateTypesWithTemplate(file *protogen.File, opts *Generat
 	// Render template
 	var buf bytes.Buffer
 	if err := templates.ExecuteTemplate(&buf, fileTemplate, data); err != nil {
-		return fmt.Errorf("failed to execute template: %w", err)
+		return core.Wrapf(err, "failed to execute template %q for file %q", fileTemplate, filename)
 	}
 
 	// Write to generated file
@@ -168,6 +167,9 @@ func (g *Generator) processServices(gen *protogen.GeneratedFile, services []*pro
 // buildMessageData builds template data for a message
 func (*Generator) buildMessageData(gen *protogen.GeneratedFile, msg *protogen.Message,
 	opts *GeneratorOptions) MessageData {
+	if msg == nil {
+		return MessageData{}
+	}
 	data := MessageData{
 		Name:          msg.GoIdent.GoName,
 		InterfaceName: gengo.InterfaceNameForMessage(msg, opts.GetInterfacePattern()),
@@ -189,6 +191,9 @@ func (*Generator) buildMessageData(gen *protogen.GeneratedFile, msg *protogen.Me
 // processRegularFields adds regular (non-oneof) fields to message data
 func processRegularFields(gen *protogen.GeneratedFile, msg *protogen.Message,
 	opts *GeneratorOptions, data *MessageData) {
+	if msg == nil || data == nil {
+		return
+	}
 	for _, field := range msg.Fields {
 		if field.Oneof != nil && !gengo.IsSyntheticOneOf(field.Oneof) {
 			continue // Skip fields that are part of real `oneof` groups
@@ -209,12 +214,18 @@ func processRegularFields(gen *protogen.GeneratedFile, msg *protogen.Message,
 
 // OneOfGroups returns the oneof groups for a message
 func OneOfGroups(msg *protogen.Message) []*protogen.Oneof {
+	if msg == nil {
+		return nil
+	}
 	// cspell:disable-next-line
 	return msg.Oneofs // Using protogen API field name
 }
 
 // processOneOfGroups adds oneof groups to message data
 func processOneOfGroups(gen *protogen.GeneratedFile, msg *protogen.Message, opts *GeneratorOptions, data *MessageData) {
+	if msg == nil || data == nil {
+		return
+	}
 	for _, oneof := range OneOfGroups(msg) {
 		if gengo.IsSyntheticOneOf(oneof) {
 			continue // Skip synthetic `oneof` groups
@@ -243,6 +254,9 @@ func processOneOfGroups(gen *protogen.GeneratedFile, msg *protogen.Message, opts
 // buildServiceData builds template data for a service
 func (*Generator) buildServiceData(_ *protogen.GeneratedFile, svc *protogen.Service,
 	opts *GeneratorOptions) ServiceData {
+	if svc == nil {
+		return ServiceData{}
+	}
 	data := ServiceData{
 		Name:          svc.GoName,
 		InterfaceName: gengo.InterfaceNameForService(svc, opts.GetInterfacePattern()),
@@ -275,6 +289,9 @@ func (g *Generator) processEnums(gen *protogen.GeneratedFile, enums []*protogen.
 
 // buildEnumData builds template data for an enum
 func (*Generator) buildEnumData(_ *protogen.GeneratedFile, enum *protogen.Enum, opts *GeneratorOptions) EnumData {
+	if enum == nil {
+		return EnumData{}
+	}
 	enumName := gengo.EnumNameFor(enum, opts.GetEnumPattern())
 
 	data := EnumData{
