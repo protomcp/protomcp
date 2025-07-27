@@ -53,11 +53,12 @@ EOF
 		[ -n "$name" ] || continue
 
 		if [ "$dir" = "." ]; then
-			# Root module - includes everything except the submodules
+			# Root module - includes everything except the submodules and proto examples
 			cat <<EOF
     - name: ${name}
       paths:
         - "./"
+        - "!proto/examples/"
 EOF
 			# Exclude all subdirectories from root module
 			while IFS=: read -r _name subdir _rest2; do
