@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package simple.v1;
 
-option go_package = "github.com/protomcp/protomcp/proto/examples/simple/v1;v1";
+option go_package = "protomcp.org/protomcp/proto/examples/simple/v1";
 
 // SimpleMessage has no associated service
 message SimpleMessage {

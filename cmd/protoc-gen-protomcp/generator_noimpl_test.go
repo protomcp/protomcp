@@ -22,7 +22,7 @@ func createProtoFileWithService() *descriptorpb.FileDescriptorProto {
 	}
 	protoFile.Service = []*descriptorpb.ServiceDescriptorProto{
 		testutils.NewService("TestService",
-			testutils.NewMethod("GetItem", "GetItemRequest", "GetItemResponse"),
+			testutils.NewMethod("GetItem", ".test.GetItemRequest", ".test.GetItemResponse"),
 		),
 	}
 	return protoFile

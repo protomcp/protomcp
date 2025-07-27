@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package calculator.v1;
 
-option go_package = "github.com/protomcp/protomcp/examples/calculator/v1";
+option go_package = "protomcp.org/protomcp/proto/examples/calculator/v1";
 
 // Calculator service provides basic arithmetic operations
 service CalculatorService {

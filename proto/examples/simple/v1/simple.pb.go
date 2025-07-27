@@ -81,7 +81,7 @@ const file_simple_v1_simple_proto_rawDesc = "" +
 	"\x16simple/v1/simple.proto\x12\tsimple.v1\"5\n" +
 	"\rSimpleMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05valueB:Z8github.com/protomcp/protomcp/proto/examples/simple/v1;v1b\x06proto3"
+	"\x05value\x18\x02 \x01(\x05R\x05valueB0Z.protomcp.org/protomcp/proto/examples/simple/v1b\x06proto3"
 
 var (
 	file_simple_v1_simple_proto_rawDescOnce sync.Once

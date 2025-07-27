@@ -663,7 +663,7 @@ const file_calculator_v1_calculator_proto_rawDesc = "" +
 	"\x11CalculatorService\x12<\n" +
 	"\x03Add\x12\x19.calculator.v1.AddRequest\x1a\x1a.calculator.v1.AddResponse\x12K\n" +
 	"\bMultiply\x12\x1e.calculator.v1.MultiplyRequest\x1a\x1f.calculator.v1.MultiplyResponse\x12E\n" +
-	"\x06Divide\x12\x1c.calculator.v1.DivideRequest\x1a\x1d.calculator.v1.DivideResponseB5Z3github.com/protomcp/protomcp/examples/calculator/v1b\x06proto3"
+	"\x06Divide\x12\x1c.calculator.v1.DivideRequest\x1a\x1d.calculator.v1.DivideResponseB4Z2protomcp.org/protomcp/proto/examples/calculator/v1b\x06proto3"
 
 var (
 	file_calculator_v1_calculator_proto_rawDescOnce sync.Once
