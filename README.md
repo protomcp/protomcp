@@ -77,7 +77,7 @@ stable yet and everything may change. The initial focus is on:
 
 ## Contributing
 
-See [AGENT.md](AGENT.md) for development guidelines and build system details.
+See [AGENTS.md](AGENTS.md) for development guidelines and build system details.
 
 ## License
 
