@@ -32,13 +32,12 @@ fix_file() {
 	# Leave empty files alone
 	[ -s "$file" ] || return 0
 
-
 	# Check last byte to see if file ends with newline
 	# Use od to get hexadecimal representation of last byte
 	last_byte=$(tail -c 1 "$file" | od -An -tx1 | tr -d ' \t')
 
 	# If last byte is not newline (0x0a), add one
-	if [ "x$last_byte" != "x0a" ]; then
+	if [ "$last_byte" != "0a" ]; then
 		printf '\n' >> "$file"
 	elif [ "$(wc -c < "$file")" -eq 1 ]; then
 		# File only contains a newline, truncate it
