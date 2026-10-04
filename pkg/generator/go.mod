@@ -4,7 +4,7 @@ go 1.23.0
 
 require darvaza.org/core v0.17.4
 
-require google.golang.org/protobuf v1.36.6
+require google.golang.org/protobuf v1.36.12
 
 require (
 	golang.org/x/net v0.42.0 // indirect
